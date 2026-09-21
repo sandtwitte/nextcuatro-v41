@@ -1,0 +1,1004 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#1f7a5c" />
+<title>NextCuatro v4.1</title>
+<style>
+  :root{
+    --bg:#f5f7f8; --card:#fff; --ink:#172026; --muted:#6d7a84; --line:#dfe5e8;
+    --accent:#1f7a5c; --accent2:#e9f5f0; --warn:#fff3d6; --danger:#b73a3a;
+    --shadow:0 8px 24px rgba(23,32,38,.08); --radius:18px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;background:var(--bg);color:var(--ink)}
+  button,input,select{font:inherit}
+  .app{max-width:1180px;margin:0 auto;padding:18px}
+  .topbar{display:flex;gap:14px;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap}
+  .brand{display:flex;align-items:center;gap:12px}
+  .logo{width:46px;height:46px;border-radius:14px;background:var(--accent);color:white;display:grid;place-items:center;font-weight:800;font-size:22px;box-shadow:var(--shadow)}
+  h1{font-size:24px;margin:0}
+  .subtle{color:var(--muted);font-size:14px}
+  .toolbar{display:flex;gap:8px;flex-wrap:wrap}
+  button{border:0;border-radius:12px;padding:11px 14px;cursor:pointer;background:#edf1f3;color:var(--ink)}
+  button.primary{background:var(--accent);color:white;font-weight:700}
+  button.secondary{background:white;border:1px solid var(--line)}
+  button.danger{color:#fff;background:var(--danger)}
+  button.ghost{background:transparent;padding:6px 8px}
+  button:disabled{opacity:.45;cursor:not-allowed}
+  .grid{display:grid;grid-template-columns:340px 1fr;gap:18px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+  .panel{padding:18px}
+  .section-title{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+  .section-title h2{font-size:18px;margin:0}
+  .setup-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  label{font-size:12px;color:var(--muted);display:block;margin-bottom:5px}
+  input,select{width:100%;padding:11px;border:1px solid var(--line);border-radius:10px;background:white;color:var(--ink)}
+  .player-add{display:grid;grid-template-columns:1.4fr .8fr auto;gap:8px;margin-top:12px}
+  .player-list{display:flex;flex-direction:column;gap:8px;max-height:54vh;overflow:auto;padding-right:2px}
+  .player-row{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:#fff}
+  .player-row.temp{opacity:.55}
+  .player-row.leaving{background:var(--warn)}
+  .player-name{font-weight:650}
+  .tiny{font-size:12px;color:var(--muted)}
+  .status-menu{display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end}
+  .status-menu button{padding:6px 8px;font-size:12px;border-radius:8px}
+  .left-box{margin-top:12px;border-top:1px solid var(--line);padding-top:10px}
+  details summary{cursor:pointer;color:var(--muted)}
+  .hero{padding:18px}
+  .hero-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap}
+  .round-title{font-size:28px;font-weight:800}
+  .statsline{color:var(--muted);margin-top:3px}
+  .modebox{min-width:220px}
+  .courts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:16px}
+  .court{padding:16px;border:1px solid var(--line);border-radius:16px;background:#fff}
+  .court h3{margin:0 0 12px;font-size:16px;color:var(--muted);letter-spacing:.02em}
+  .team{font-size:20px;font-weight:750;line-height:1.35}
+  .vs{text-align:center;color:var(--muted);font-weight:700;margin:8px 0}
+  .scorehint{font-size:12px;color:var(--muted);margin-top:10px}
+  .waiting{margin-top:14px;padding:12px 14px;border-radius:12px;background:#f1f4f5}
+  .nextbar{display:flex;gap:10px;align-items:center;justify-content:space-between;margin-top:16px;flex-wrap:wrap}
+  .nextbar .primary{font-size:18px;padding:14px 24px}
+  .empty{padding:40px 20px;text-align:center;color:var(--muted)}
+  .history{margin-top:18px}
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  th,td{text-align:left;padding:9px;border-bottom:1px solid var(--line)}
+  th{color:var(--muted);font-weight:600}
+  .pill{display:inline-block;padding:4px 8px;border-radius:999px;background:var(--accent2);color:var(--accent);font-size:12px;font-weight:700}
+  .notice{margin:10px 0;padding:10px 12px;border-radius:10px;background:#fff7e6;color:#7a5b15;font-size:13px}
+  .footer-note{font-size:12px;color:var(--muted);margin-top:14px}
+
+  .result-buttons{display:flex;gap:7px;flex-wrap:wrap;margin-top:13px}
+  .result-buttons button{font-size:12px;padding:8px 10px}
+  .result-buttons button.selected{background:var(--accent);color:white;font-weight:700}
+  .timerbar{display:flex;gap:8px;align-items:end;flex-wrap:wrap;margin-top:14px;padding:12px;border-radius:14px;background:#f7f9fa;border:1px solid var(--line)}
+  .timer-display{font-size:28px;font-weight:800;min-width:90px}
+  .timerbar select{width:auto;min-width:115px}
+  .footer{text-align:center;color:var(--muted);font-size:12px;padding:20px 0 8px}
+  @media(max-width:840px){
+    .app{padding:10px}
+    .grid{grid-template-columns:1fr}
+    .courts{grid-template-columns:1fr}
+    .player-list{max-height:none}
+    .hero{padding:14px}
+    .panel{padding:14px}
+    .team{font-size:18px}
+  }
+
+  /* Phone-first refinements */
+  @media(max-width:640px){
+    body{font-size:16px}
+    .app{padding:8px}
+    .topbar{align-items:flex-start;margin-bottom:10px}
+    .brand{width:100%;align-items:flex-start}
+    .logo{width:42px;height:42px;font-size:19px;flex:0 0 auto}
+    h1{font-size:22px}
+    .subtle{font-size:13px}
+    .toolbar{width:100%}
+    .toolbar button{flex:1 1 0;min-height:44px}
+    .grid{gap:10px}
+    .card{border-radius:14px;box-shadow:none}
+    .panel,.hero{padding:12px}
+    .setup-row{grid-template-columns:1fr;gap:8px}
+    input,select{font-size:16px;min-height:44px}
+    .player-add{grid-template-columns:1fr 110px;gap:8px}
+    .player-add button{grid-column:1 / -1;min-height:46px;font-weight:700}
+    .player-row{grid-template-columns:1fr;align-items:start}
+    .status-menu{justify-content:flex-start}
+    .status-menu button{min-height:38px;padding:8px 10px}
+    .hero-head{display:block}
+    .round-title{font-size:24px}
+    .modebox{min-width:0;margin-top:12px}
+    .timerbar{display:grid;grid-template-columns:1fr 1fr;align-items:center;gap:8px;padding:10px}
+    .timerbar>div:first-child{grid-column:1 / -1}
+    .timer-display{font-size:30px;min-width:0;text-align:center}
+    .timerbar button{min-height:44px}
+    .timerbar .tiny{grid-column:1 / -1}
+    .courts{gap:10px;margin-top:12px}
+    .court{padding:13px}
+    .court h3{font-size:14px;margin-bottom:10px}
+    .team{font-size:20px;line-height:1.3}
+    .vs{margin:6px 0}
+    .result-buttons{display:grid;grid-template-columns:1fr;gap:8px;margin-top:12px}
+    .result-buttons button{width:100%;min-height:44px;font-size:14px;line-height:1.2;text-align:left}
+    .waiting{font-size:14px}
+    .nextbar{display:block}
+    .nextbar .primary{width:100%;min-height:54px;font-size:19px;margin-top:10px}
+    .nextbar .subtle{font-size:13px}
+    .history{margin-top:10px}
+    table{font-size:13px;min-width:580px}
+    th,td{padding:8px}
+    .footer{padding-bottom:max(12px, env(safe-area-inset-bottom))}
+  }
+
+
+  .logo-img{
+    object-fit:cover;
+    padding:0;
+    overflow:hidden;
+    border-radius:14px;
+    background:#071f43;
+  }
+
+
+.status-menu button.selected{background:#d9f99d;border-color:#65a30d;color:#365314;font-weight:800}
+.status-menu select{min-height:36px;border:1px solid var(--border);border-radius:9px;background:white;padding:5px 8px}
+
+/* v4.1 visual restoration — v3.1-inspired navy + pickleball green, mobile first */
+:root{
+  --navy:#102a43;
+  --navy2:#173f5f;
+  --green:#9bd23c;
+  --green-dark:#6f9f1e;
+  --page:#f4f7f9;
+  --card:#ffffff;
+  --text:#172b3a;
+  --muted:#667784;
+  --border:#dbe3e8;
+}
+body{
+  background:var(--page);
+  color:var(--text);
+  -webkit-text-size-adjust:100%;
+}
+header{
+  background:linear-gradient(135deg,var(--navy),var(--navy2));
+  color:#fff;
+  border-bottom:5px solid var(--green);
+  padding:18px 20px;
+}
+header .brand{align-items:center;gap:14px}
+header .brand img{
+  background:#fff;
+  border-radius:14px;
+  padding:4px;
+  width:72px;
+  height:72px;
+  object-fit:contain;
+}
+header h1, header .title, header strong{color:#fff}
+header .subtle, header .tiny{color:#e9f2f7}
+.card{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:16px;
+  box-shadow:0 4px 14px rgba(16,42,67,.07);
+}
+button.primary{
+  background:var(--green);
+  color:#18321a;
+  border-color:var(--green-dark);
+  font-weight:800;
+}
+button.primary:hover{filter:brightness(.97)}
+button.secondary{
+  background:#fff;
+  color:var(--navy);
+  border-color:#b9c8d2;
+}
+select,input,button{
+  min-height:44px;
+  font-size:16px;
+}
+.nextbar{
+  background:#fff;
+  border-top:1px solid var(--border);
+  padding-top:12px;
+}
+#nextRoundBtn{
+  min-height:54px;
+  font-size:17px;
+  border-radius:13px;
+  padding:12px 18px;
+}
+.modebox select,#timerMinutes,#courtCount,#sessionEndType,#endTime{
+  min-height:44px;
+}
+.status-menu{
+  display:flex;
+  gap:7px;
+  flex-wrap:wrap;
+  justify-content:flex-end;
+}
+.status-menu button,.status-menu select{
+  min-height:40px;
+}
+.status-menu button.selected{
+  background:var(--green);
+  border-color:var(--green-dark);
+  color:#18321a;
+}
+.court{
+  border-top:4px solid var(--green);
+}
+@media(max-width:720px){
+  header{padding:14px 14px 16px}
+  header .brand{align-items:center}
+  header .brand img{width:60px;height:60px;border-radius:12px}
+  .wrap,.app,.layout{padding-left:10px!important;padding-right:10px!important}
+  .card{border-radius:14px}
+  .hero-head{gap:12px}
+  .modebox{width:100%}
+  .modebox select{width:100%}
+  .timerbar{gap:8px}
+  .timerbar>*{min-width:0}
+  .player-add{grid-template-columns:1fr!important;gap:8px}
+  .player-add input,.player-add select,.player-add button{width:100%}
+  .player-row{
+    align-items:flex-start;
+    gap:9px;
+    flex-direction:column;
+  }
+  .status-menu{
+    width:100%;
+    justify-content:flex-start;
+    display:grid;
+    grid-template-columns:1fr 1fr;
+  }
+  .status-menu button,.status-menu select{
+    width:100%;
+    max-width:none!important;
+    min-height:44px;
+  }
+  .courts{grid-template-columns:1fr!important}
+  .nextbar{position:sticky;bottom:0;z-index:10;padding:10px 0 4px}
+  #nextRoundBtn{width:100%;min-height:58px;font-size:18px}
+}
+@media(max-width:390px){
+  .status-menu{grid-template-columns:1fr}
+  header .brand img{width:54px;height:54px}
+}
+
+
+/* v4.1 final compact pass */
+header{background:#123b5d!important;border-bottom:4px solid #8fcf32!important;padding:12px 16px!important}
+header .brand{gap:12px!important;align-items:center!important}
+header .brand img{width:76px!important;height:76px!important;padding:0!important;border-radius:12px!important;object-fit:cover!important;background:transparent!important}
+header .subtle{color:#d8e8f2!important;font-size:15px!important;margin-top:5px!important}
+.card{box-shadow:0 2px 8px rgba(16,42,67,.06)!important}
+.modebox{display:flex!important;align-items:center!important;gap:8px!important}
+.modebox label{margin:0!important;white-space:nowrap!important}
+.modebox select{width:auto!important;min-width:170px!important}
+#nextRoundBtn{background:#8fcf32!important;color:#17321a!important}
+@media(max-width:720px){
+ header{padding:10px 12px!important}
+ header .brand img{width:68px!important;height:68px!important}
+ .modebox{display:grid!important;grid-template-columns:auto 1fr!important}
+ .modebox select{width:100%!important;min-width:0!important}
+ .card{padding:12px!important}
+}
+
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <div class="brand">
+      <img class="logo logo-img" src="nextcuatro-logo.png" alt="NextCuatro logo">
+      <div>
+        <h1>NextCuatro</h1>
+        <div class="subtle">Flexible Smarter Shuffling</div>
+      </div>
+    </div>
+    <div class="toolbar">
+      <button class="secondary" id="resetBtn">New Session</button>
+      
+    </div>
+  </div>
+
+  <div class="grid">
+    <aside class="card panel">
+      <div class="section-title">
+        <h2>Session</h2>
+        <span class="pill" id="activeCountPill">0 active</span>
+      </div>
+      <div class="setup-row">
+        <div>
+          <label>Courts</label>
+          <input id="courtCount" type="number" min="1" max="20" value="4">
+        </div>
+        <div>
+          <label>Court availability</label>
+          <select id="sessionEndType">
+            <option value="open">Open-ended</option>
+            <option value="until">Reserved until…</option>
+          </select>
+        </div>
+      </div>
+      <div id="endTimeWrap" style="display:none;margin-top:10px">
+        <label>Reserved until</label>
+        <input id="endTime" type="time">
+      </div>
+
+      <div class="section-title" style="margin-top:20px">
+        <h2>Players</h2>
+      </div>
+      <div class="player-add">
+        <input id="playerName" placeholder="Name or nickname">
+        <select id="playerSkill" title="Private skill rating">
+          <option value="">Unrated</option>
+          <option>1.0</option><option>1.25</option><option>1.5</option><option>1.75</option><option>2.0</option><option>2.25</option><option>2.5</option><option>2.75</option><option>3.0</option><option>3.25</option><option>3.5</option><option>3.75</option><option>4.0</option><option>4.25</option><option>4.5</option><option>4.75</option><option>5.0</option>
+        </select>
+        <button class="primary" id="addPlayerBtn">Add</button>
+      </div>
+      <div id="duplicateNotice" class="notice" style="display:none"></div>
+
+      <div class="player-list" id="playerList" style="margin-top:12px"></div>
+
+      <div class="left-box">
+        <details>
+          <summary id="leftSummary">Left session (0)</summary>
+          <div id="leftList" style="margin-top:8px;display:flex;flex-direction:column;gap:8px"></div>
+        </details>
+      </div>
+
+      <div class="footer-note">Skill ratings are private and are not shown on the organizer court board.</div>
+    </aside>
+
+    <main>
+      <section class="card hero">
+        <div class="hero-head">
+          <div>
+            <div class="round-title" id="roundTitle">Ready to start</div>
+            <div class="statsline" id="statsLine">Add players, choose a mode, then create the first round.</div>
+          </div>
+          <div class="modebox">
+            <label>Shuffle mode</label>
+            <select id="modeSelect">
+              <option value="smart">Smart Random</option>
+              <option value="similar">Similar Skill</option>
+              <option value="balanced">Balanced Teams</option>
+              
+            </select>
+          </div>
+        </div>
+
+        <div class="timerbar">
+          <div><label>Round timer</label>
+            <select id="timerMinutes">
+              <option value="0">Manual</option>
+              <option value="10">10 minutes</option>
+              <option value="12" selected>12 minutes</option>
+              <option value="15">15 minutes</option>
+            </select>
+          </div>
+          <div class="timer-display" id="timerDisplay">12:00</div>
+          <button class="secondary" id="timerStartBtn">Start</button>
+          <button class="secondary" id="timerResetBtn">Reset</button>
+          <div class="tiny">At zero: finish the rally. If tied, play one deciding point.</div>
+        </div>
+        <div id="courtArea" class="courts"></div>
+        <div id="emptyState" class="empty">
+          NextCuatro will build court assignments from whoever is <strong>Active</strong> when you press Next Round.
+        </div>
+
+        <div id="waitingBox" class="waiting" style="display:none"></div>
+
+        <div class="nextbar">
+          <div class="subtle" id="reservationNote"></div>
+          <button class="primary" id="nextRoundBtn">🔀 Create Round 1</button>
+        </div>
+      </section>
+
+      <section class="card panel history">
+        <div class="section-title">
+          <h2>Session fairness</h2>
+          <span class="subtle">Rounds, sit-outs, partners</span>
+        </div>
+        <div style="overflow:auto">
+          <table>
+            <thead>
+              <tr><th>Player</th><th>Played</th><th>Sat</th><th>Record</th><th>Different partners</th><th>Status</th></tr>
+            </thead>
+            <tbody id="statsBody"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+</div>
+<div class="footer">NextCuatro · v4.1 · © 2026 Todd Witte</div>
+
+<script>
+(() => {
+  const STORAGE_KEY = 'nextcuatro_v4_state';
+  const defaultState = {
+    round: 0,
+    courts: 4,
+    endType: 'open',
+    endTime: '',
+    mode: 'smart',
+    timerMinutes: 12,
+    players: [],
+    currentRound: null
+  };
+  let state = load();
+
+  const $ = id => document.getElementById(id);
+  const uid = () => Math.random().toString(36).slice(2,10);
+
+  function load(){
+    try{
+      const s = JSON.parse(localStorage.getItem(STORAGE_KEY));
+      return s ? {...defaultState, ...s} : structuredClone(defaultState);
+    }catch(e){ return structuredClone(defaultState); }
+  }
+  function save(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+  state.players=(state.players||[]).map(p=>({
+    wins:0,losses:0,partners:{},opponents:{},played:0,sat:0,lastSatRound:-999,
+    joinedRound:0,status:'active',fixedPartnerId:null,sitNext:false,
+    adaptiveRating:null,resultGames:0,...p
+  }));
+  state.players.forEach(p=>{
+    if(p.adaptiveRating==null) p.adaptiveRating = p.skill ?? 3.0;
+  });
+
+  function activePlayers(){
+    return state.players.filter(p => (p.status === 'active' || p.status === 'leaving') && !p.sitNext);
+  }
+  function normalizedName(s){ return s.trim().replace(/\s+/g,' ').toLowerCase(); }
+  function rating(p){ return Number.isFinite(p.adaptiveRating) ? p.adaptiveRating : (p.skill ?? 3.0); }
+
+  function addPlayer(){
+    const raw = $('playerName').value.trim().replace(/\s+/g,' ');
+    if(!raw) return;
+    const dup = state.players.some(p => normalizedName(p.name) === normalizedName(raw));
+    if(dup){
+      $('duplicateNotice').style.display = 'block';
+      $('duplicateNotice').textContent = `${raw} is already used in this session. Add a last initial or nickname.`;
+      return;
+    }
+    $('duplicateNotice').style.display = 'none';
+    const skill = $('playerSkill').value ? Number($('playerSkill').value) : null;
+    state.players.push({
+      id:uid(), name:raw, skill, status:'active',
+      played:0, sat:0, lastSatRound:-999, joinedRound:state.round,
+      partners:{}, opponents:{}, wins:0, losses:0,
+      fixedPartnerId:null, sitNext:false, adaptiveRating:skill ?? 3.0, resultGames:0
+    });
+    $('playerName').value='';
+    $('playerSkill').value='';
+    save(); render();
+  }
+
+  function setStatus(id,status){
+    const p = state.players.find(x=>x.id===id);
+    if(!p) return;
+    p.status = status;
+    if(status!=='active') p.sitNext=false;
+    save(); render();
+  }
+
+  function toggleSit(id){
+    const p=state.players.find(x=>x.id===id);
+    if(!p) return;
+    p.sitNext=!p.sitNext;
+    save();render();
+  }
+
+  function setPair(id,partnerId){
+    const p=state.players.find(x=>x.id===id);
+    if(!p) return;
+    if(p.fixedPartnerId){
+      const old=state.players.find(x=>x.id===p.fixedPartnerId);
+      if(old && old.fixedPartnerId===p.id) old.fixedPartnerId=null;
+      p.fixedPartnerId=null;
+    }
+    if(partnerId){
+      const q=state.players.find(x=>x.id===partnerId);
+      if(!q || q.id===p.id) return;
+      if(q.fixedPartnerId){
+        const old=state.players.find(x=>x.id===q.fixedPartnerId);
+        if(old && old.fixedPartnerId===q.id) old.fixedPartnerId=null;
+        q.fixedPartnerId=null;
+      }
+      p.fixedPartnerId=q.id; q.fixedPartnerId=p.id;
+    }
+    save();render();
+  }
+
+  function restorePlayer(id){
+    const p = state.players.find(x=>x.id===id);
+    if(p){ p.status='active'; p.sitNext=false; save(); render(); }
+  }
+
+  function incrementMap(obj,key){ obj[key]=(obj[key]||0)+1; }
+  function partnerCount(a,b){ return a.partners[b.id] || 0; }
+  function opponentCount(a,b){ return a.opponents[b.id] || 0; }
+
+  function shuffle(arr){
+    const a=[...arr];
+    for(let i=a.length-1;i>0;i--){
+      const j=Math.floor(Math.random()*(i+1));
+      [a[i],a[j]]=[a[j],a[i]];
+    }
+    return a;
+  }
+
+  function teamPairings(group){
+    const [a,b,c,d]=group;
+    return [[[a,b],[c,d]],[[a,c],[b,d]],[[a,d],[b,c]]];
+  }
+  function teamTotal(team){ return team.reduce((s,p)=>s+rating(p),0); }
+  function teamBalanceCost(pairing){ return Math.abs(teamTotal(pairing[0])-teamTotal(pairing[1])); }
+  function repeatCost(pairing, opponentWeight=.35){
+    const [[a,b],[c,d]]=pairing;
+    let cost=(partnerCount(a,b)+partnerCount(c,d))*10;
+    for(const x of [a,b]) for(const y of [c,d]) cost += opponentCount(x,y)*opponentWeight;
+    return cost;
+  }
+  function respectsFixed(pairing){
+    for(const team of pairing){
+      for(const p of team){
+        if(p.fixedPartnerId && !team.some(x=>x.id===p.fixedPartnerId)) return false;
+      }
+    }
+    return true;
+  }
+  function bestTeams(group, mode){
+    const valid=teamPairings(group).filter(respectsFixed);
+    const options=valid.length?valid:teamPairings(group);
+    let best=options[0], bestCost=Infinity;
+    for(const opt of options){
+      let cost=repeatCost(opt,.4);
+      if(mode==='balanced'){
+        const diff=teamBalanceCost(opt);
+        cost += diff<=.25 ? diff*2 : diff<=.5 ? 2+diff*5 : 20+diff*20;
+      } else if(mode==='similar'){
+        cost += teamBalanceCost(opt)*2;
+      } else {
+        cost += teamBalanceCost(opt)*.05; // Smart Random is not skill-driven.
+      }
+      cost += Math.random()*.25;
+      if(cost<bestCost){best=opt;bestCost=cost;}
+    }
+    return best;
+  }
+  function groupRepeatCost(group){
+    let c=0;
+    for(let i=0;i<group.length;i++) for(let j=i+1;j<group.length;j++)
+      c += partnerCount(group[i],group[j])*4 + opponentCount(group[i],group[j]);
+    return c;
+  }
+
+  function makeUnits(players){
+    const ids=new Set(players.map(p=>p.id)), used=new Set(), units=[];
+    for(const p of players){
+      if(used.has(p.id)) continue;
+      const q=p.fixedPartnerId ? state.players.find(x=>x.id===p.fixedPartnerId) : null;
+      if(q && ids.has(q.id) && !used.has(q.id)){
+        units.push([p,q]); used.add(p.id);used.add(q.id);
+      } else { units.push([p]);used.add(p.id); }
+    }
+    return units;
+  }
+
+  function sitScore(p){
+    const recent = state.round-p.lastSatRound<=1 ? 1000 : 0;
+    const newcomer = state.round-p.joinedRound<=1 ? 500 : 0;
+    return p.sat*120 + recent + newcomer - p.played*10 + Math.random()*8;
+  }
+
+  function chooseParticipants(players, capacity, mode){
+    if(players.length<=capacity) return {playing:[...players],waiting:[]};
+    const waitCount=players.length-capacity;
+
+    // Similar Skill: choose sitters locally from crowded skill neighborhoods.
+    if(mode==='similar'){
+      const sorted=[...players].sort((a,b)=>rating(b)-rating(a));
+      let best=null,bestCost=Infinity;
+      // Randomly sample possible waiting sets, strongly penalizing disruption of skill adjacency.
+      for(let t=0;t<300;t++){
+        const candidates=[...sorted].sort((a,b)=>sitScore(a)-sitScore(b)+((Math.random()-.5)*20));
+        const waiting=[];
+        for(const p of candidates){
+          if(waiting.length>=waitCount) break;
+          if(p.fixedPartnerId) continue; // avoid splitting fixed pairs
+          waiting.push(p);
+        }
+        if(waiting.length<waitCount) continue;
+        const wids=new Set(waiting.map(p=>p.id));
+        const playing=sorted.filter(p=>!wids.has(p.id));
+        let cost=waiting.reduce((s,p)=>s+sitScore(p),0);
+        for(let i=0;i<playing.length;i+=4){
+          const g=playing.slice(i,i+4);
+          if(g.length===4) cost+=(rating(g[0])-rating(g[3]))*35;
+        }
+        if(cost<bestCost){best={playing,waiting};bestCost=cost;}
+      }
+      if(best) return best;
+    }
+
+    const units=makeUnits(players);
+    let best=null,bestCost=Infinity;
+    for(let t=0;t<500;t++){
+      const order=shuffle(units);
+      const waiting=[], playing=[];
+      let slots=capacity;
+      for(const u of order){
+        if(u.length<=slots){ playing.push(...u);slots-=u.length; }
+        else waiting.push(...u);
+      }
+      if(playing.length!==capacity) continue;
+      let cost=waiting.reduce((s,p)=>s+sitScore(p),0);
+      if(cost<bestCost){best={playing,waiting};bestCost=cost;}
+    }
+    if(best) return best;
+
+    // Fallback if pair structure makes exact capacity impossible.
+    const sorted=[...players].sort((a,b)=>sitScore(a)-sitScore(b));
+    const waiting=sorted.slice(0,waitCount), wids=new Set(waiting.map(p=>p.id));
+    return {playing:players.filter(p=>!wids.has(p.id)),waiting};
+  }
+
+  function buildSmart(players){
+    let best=null,bestCost=Infinity;
+    const trials=Math.min(500,80+players.length*15);
+    for(let t=0;t<trials;t++){
+      const arr=shuffle(players), groups=[]; let cost=0, ok=true;
+      for(let i=0;i<arr.length;i+=4){
+        const g=arr.slice(i,i+4);
+        if(g.length<4){ok=false;break;}
+        // fixed partners must land in same group
+        for(const p of g) if(p.fixedPartnerId && !g.some(x=>x.id===p.fixedPartnerId)){ok=false;break;}
+        if(!ok) break;
+        groups.push(g); cost+=groupRepeatCost(g);
+      }
+      cost += Math.random()*3; // preserve random feel among similarly good solutions
+      if(ok && cost<bestCost){best=groups;bestCost=cost;}
+    }
+    if(!best) best=[]; 
+    if(!best.length){
+      const arr=[...players]; for(let i=0;i<arr.length;i+=4) best.push(arr.slice(i,i+4));
+    }
+    return best.map(g=>bestTeams(g,'smart'));
+  }
+
+  function buildSimilar(players){
+    // Skill pods dominate: highest four on Court 1, then progressively lower courts.
+    // Repeat avoidance only changes teams INSIDE each four-person pod.
+    const sorted=[...players].sort((a,b)=>rating(b)-rating(a));
+    const groups=[];
+    for(let i=0;i<sorted.length;i+=4) groups.push(sorted.slice(i,i+4));
+    // Repair fixed pairs that straddle adjacent pod boundaries where possible.
+    for(let i=0;i<groups.length-1;i++){
+      for(const p of [...groups[i]]){
+        if(!p.fixedPartnerId) continue;
+        const j=groups[i+1].findIndex(x=>x.id===p.fixedPartnerId);
+        if(j>=0){
+          const candidate=groups[i].filter(x=>x.id!==p.id && !x.fixedPartnerId)
+            .sort((a,b)=>Math.abs(rating(a)-rating(groups[i+1][j]))-Math.abs(rating(b)-rating(groups[i+1][j])))[0];
+          if(candidate){
+            const ai=groups[i].indexOf(candidate);
+            groups[i][ai]=groups[i+1][j]; groups[i+1][j]=candidate;
+          }
+        }
+      }
+    }
+    return groups.map(g=>bestTeams(g,'similar'));
+  }
+
+  function buildBalanced(players){
+    // Search many random court compositions; primary objective is team-total balance,
+    // then new partners/opponents. Fixed pairs stay together.
+    let best=null,bestCost=Infinity;
+    const trials=Math.min(1200,250+players.length*35);
+    for(let t=0;t<trials;t++){
+      const arr=shuffle(players), groups=[]; let ok=true,cost=0;
+      for(let i=0;i<arr.length;i+=4){
+        const g=arr.slice(i,i+4);
+        for(const p of g) if(p.fixedPartnerId && !g.some(x=>x.id===p.fixedPartnerId)){ok=false;break;}
+        if(!ok) break;
+        const pairing=bestTeams(g,'balanced');
+        const diff=teamBalanceCost(pairing);
+        cost += diff<=.25 ? diff*2 : diff<=.5 ? 2+diff*8 : 30+diff*30;
+        cost += repeatCost(pairing,.5);
+        groups.push(pairing);
+      }
+      if(ok && cost<bestCost){best=groups;bestCost=cost;}
+    }
+    if(best) return best;
+    return buildSmart(players).map(pair=>bestTeams(pair.flat(),'balanced'));
+  }
+
+  function expectedScore(teamA,teamB){
+    const a=teamTotal(teamA)/2,b=teamTotal(teamB)/2;
+    return 1/(1+Math.pow(10,(b-a)/1.5));
+  }
+  function finalizeAdaptiveResults(){
+    const cr=state.currentRound;
+    if(!cr || cr.adaptiveApplied) return;
+    (cr.results||[]).forEach((winner,idx)=>{
+      if(!winner) return;
+      const court=cr.courts[idx];
+      const A=court[0].map(id=>state.players.find(p=>p.id===id)).filter(Boolean);
+      const B=court[1].map(id=>state.players.find(p=>p.id===id)).filter(Boolean);
+      const expA=expectedScore(A,B), actualA=winner==='A'?1:0;
+      const delta=actualA-expA;
+      for(const p of A){
+        p.resultGames=(p.resultGames||0)+1;
+        if(p.resultGames>=3){
+          const k=p.resultGames<=5?.12:p.resultGames<=10?.08:.05;
+          p.adaptiveRating=Math.max(1,Math.min(5,rating(p)+k*delta));
+        }
+      }
+      for(const p of B){
+        p.resultGames=(p.resultGames||0)+1;
+        if(p.resultGames>=3){
+          const k=p.resultGames<=5?.12:p.resultGames<=10?.08:.05;
+          p.adaptiveRating=Math.max(1,Math.min(5,rating(p)-k*delta));
+        }
+      }
+    });
+    cr.adaptiveApplied=true;
+  }
+
+  function makeRound(){
+    if(state.currentRound){
+      finalizeAdaptiveResults();
+      finalizeLeavers();
+    }
+    state.courts = Math.max(1, Number($('courtCount').value)||1);
+    state.mode = $('modeSelect').value;
+    state.endType = $('sessionEndType').value;
+    state.endTime = $('endTime').value;
+
+    const voluntarySitters=state.players.filter(p=>(p.status==='active'||p.status==='leaving') && p.sitNext);
+    const actives=activePlayers();
+    if(actives.length<4){
+      alert('You need at least 4 active players to create a round.');
+      return;
+    }
+    const fullCourts=Math.min(state.courts, Math.floor(actives.length/4));
+    const capacity=fullCourts*4;
+    const {playing,waiting}=chooseParticipants(actives,capacity,state.mode);
+
+    let courts;
+    if(state.mode==='similar') courts=buildSimilar(playing);
+    else if(state.mode==='balanced') courts=buildBalanced(playing);
+    else courts=buildSmart(playing);
+
+    state.round += 1;
+
+    // "Sit Out" is deliberately one round only and does not count as a fairness sit.
+    voluntarySitters.forEach(p=>p.sitNext=false);
+
+    // Update statistics/history
+    for(const p of waiting){
+      p.sat += 1;
+      p.lastSatRound = state.round;
+    }
+    for(const pairing of courts){
+      const [[a,b],[c,d]]=pairing;
+      for(const p of [a,b,c,d]) p.played += 1;
+      incrementMap(a.partners,b.id); incrementMap(b.partners,a.id);
+      incrementMap(c.partners,d.id); incrementMap(d.partners,c.id);
+      for(const x of [a,b]) for(const y of [c,d]){
+        incrementMap(x.opponents,y.id); incrementMap(y.opponents,x.id);
+      }
+    }
+
+    state.currentRound = {
+      number:state.round,
+      courts:courts.map(pair=>pair.map(team=>team.map(p=>p.id))),
+      waiting:waiting.map(p=>p.id),
+      mode:state.mode,
+      results:courts.map(()=>null)
+    };
+
+    save(); render();
+  }
+
+  function nameById(id){ return state.players.find(p=>p.id===id)?.name || 'Unknown'; }
+  function skillById(id){ return state.players.find(p=>p.id===id)?.skill ?? null; }
+
+  function renderPlayers(){
+    const list=$('playerList'); list.innerHTML='';
+    const visible=state.players.filter(p=>p.status!=='left');
+    for(const p of visible){
+      const row=document.createElement('div');
+      row.className='player-row '+(p.sitNext?'temp ':'')+(p.status==='leaving'?'leaving':'');
+      const partner=state.players.find(x=>x.id===p.fixedPartnerId);
+      const pairOptions=visible.filter(x=>x.id!==p.id && !x.sitNext).map(x=>
+        `<option value="${x.id}" ${p.fixedPartnerId===x.id?'selected':''}>Pair: ${escapeHtml(x.name)}</option>`).join('');
+      row.innerHTML=`
+        <div style="min-width:0">
+          <div class="player-name">${escapeHtml(p.name)}</div>
+          <div class="tiny">${p.skill ? 'Private skill '+p.skill : 'Unrated'} · ${statusLabel(p.status)}${partner?' · Team: '+escapeHtml(partner.name):''}</div>
+        </div>
+        <div class="status-menu">
+          <button data-action="sit" class="${p.sitNext?'selected':''}">Sit Out</button>
+          <select data-action="pair" title="Fixed team for this session" style="max-width:150px">
+            <option value="">Solo</option>${pairOptions}
+          </select>
+          <button data-action="leaving">Leave after round</button>
+          <button data-action="left">Done</button>
+        </div>`;
+      row.querySelector('[data-action="sit"]').onclick=()=>toggleSit(p.id);
+      row.querySelector('[data-action="pair"]').onchange=e=>setPair(p.id,e.target.value||null);
+      row.querySelector('[data-action="leaving"]').onclick=()=>setStatus(p.id,'leaving');
+      row.querySelector('[data-action="left"]').onclick=()=>setStatus(p.id,'left');
+      list.appendChild(row);
+    }
+
+    const left=state.players.filter(p=>p.status==='left');
+    $('leftSummary').textContent=`Left session (${left.length})`;
+    $('leftList').innerHTML='';
+    for(const p of left){
+      const row=document.createElement('div');
+      row.className='player-row';
+      row.innerHTML=`<div><div class="player-name">${escapeHtml(p.name)}</div><div class="tiny">History preserved</div></div><button>Restore</button>`;
+      row.querySelector('button').onclick=()=>restorePlayer(p.id);
+      $('leftList').appendChild(row);
+    }
+    $('activeCountPill').textContent=`${activePlayers().length} active`;
+  }
+
+
+  function recordResult(courtIndex,winner){
+    const cr=state.currentRound;if(!cr)return;
+    cr.results=cr.results||cr.courts.map(()=>null);
+    const prev=cr.results[courtIndex], court=cr.courts[courtIndex];
+    function apply(which,delta){
+      if(which!=='A'&&which!=='B')return;
+      const win=which==='A'?court[0]:court[1], lose=which==='A'?court[1]:court[0];
+      win.forEach(id=>{const p=state.players.find(x=>x.id===id);if(p)p.wins=Math.max(0,(p.wins||0)+delta)});
+      lose.forEach(id=>{const p=state.players.find(x=>x.id===id);if(p)p.losses=Math.max(0,(p.losses||0)+delta)});
+    }
+    apply(prev,-1); cr.results[courtIndex]=winner; apply(winner,1);
+    save();render();
+  }
+  function finalizeLeavers(){state.players.forEach(p=>{if(p.status==='leaving')p.status='left'});}
+
+  function renderRound(){
+    const area=$('courtArea'); area.innerHTML='';
+    const cr=state.currentRound;
+    if(!cr){
+      $('emptyState').style.display='block';
+      $('roundTitle').textContent='Ready to start';
+      $('statsLine').textContent='Add players, choose a mode, then create the first round.';
+      $('waitingBox').style.display='none';
+      $('nextRoundBtn').textContent='🔀 Create Round 1';
+      return;
+    }
+    $('emptyState').style.display='none';
+    $('roundTitle').textContent=`Round ${cr.number}`;
+    const activeN=activePlayers().length;
+    $('statsLine').textContent=`${cr.courts.length} courts · ${activeN} currently active · ${cr.waiting.length} waiting this round`;
+    cr.courts.forEach((court,idx)=>{
+      const card=document.createElement('div');
+      card.className='court';
+      const t1=court[0].map(nameById);
+      const t2=court[1].map(nameById);
+      const result=(cr.results||[])[idx]??null;
+      card.innerHTML=`
+        <h3>COURT ${idx+1}</h3>
+        <div class="team">${escapeHtml(t1[0])} + ${escapeHtml(t1[1])}</div>
+        <div class="vs">vs.</div>
+        <div class="team">${escapeHtml(t2[0])} + ${escapeHtml(t2[1])}</div>
+        <div class="result-buttons">
+          <button class="${result==='A'?'selected':''}" data-result="A">${escapeHtml(t1[0])} + ${escapeHtml(t1[1])} WON</button>
+          <button class="${result==='B'?'selected':''}" data-result="B">${escapeHtml(t2[0])} + ${escapeHtml(t2[1])} WON</button>
+        </div>`;
+      card.querySelectorAll('[data-result]').forEach(btn=>btn.onclick=()=>recordResult(idx,btn.dataset.result));
+      area.appendChild(card);
+    });
+    if(cr.waiting.length){
+      $('waitingBox').style.display='block';
+      $('waitingBox').innerHTML=`<strong>Waiting this round:</strong> ${cr.waiting.map(nameById).map(escapeHtml).join(', ')}`;
+    } else $('waitingBox').style.display='none';
+    $('nextRoundBtn').textContent=`🔀 Next Round`;
+  }
+
+  function renderStats(){
+    const body=$('statsBody'); body.innerHTML='';
+    const ordered=[...state.players].sort((a,b)=>a.name.localeCompare(b.name));
+    for(const p of ordered){
+      const tr=document.createElement('tr');
+      tr.innerHTML=`
+        <td>${escapeHtml(p.name)}</td>
+        <td>${p.played}</td>
+        <td>${p.sat}</td>
+        <td>${p.wins||0}–${p.losses||0}</td>
+        <td>${Object.keys(p.partners).length}</td>
+        <td>${statusLabel(p.status)}</td>`;
+      body.appendChild(tr);
+    }
+  }
+
+  function statusLabel(s){
+    return ({active:'Active',leaving:'Leaving after this round',left:'Left session'})[s]||s;
+  }
+
+  function renderReservation(){
+    $('endTimeWrap').style.display = $('sessionEndType').value==='until' ? 'block' : 'none';
+    if(state.endType==='until' && state.endTime){
+      $('reservationNote').textContent=`Courts reserved until ${formatTime(state.endTime)}.`;
+    } else $('reservationNote').textContent='Open-ended session.';
+  }
+
+  function render(){
+    $('courtCount').value=state.courts;
+    $('sessionEndType').value=state.endType;
+    $('endTime').value=state.endTime;
+    $('modeSelect').value=state.mode;
+    $('timerMinutes').value=String(state.timerMinutes??12);
+    renderPlayers(); renderRound(); renderStats(); renderReservation();
+  }
+
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
+  }
+  function formatTime(v){
+    if(!v) return '';
+    const [h,m]=v.split(':').map(Number);
+    const d=new Date(); d.setHours(h,m,0,0);
+    return d.toLocaleTimeString([], {hour:'numeric',minute:'2-digit'});
+  }
+
+
+  let timerInterval=null,timerRemaining=(state.timerMinutes||12)*60;
+  function renderTimer(){
+    const mins=Number($('timerMinutes').value);
+    if(mins===0&&!timerInterval){$('timerDisplay').textContent='Manual';return;}
+    const m=Math.floor(timerRemaining/60),s=timerRemaining%60;
+    $('timerDisplay').textContent=`${m}:${String(s).padStart(2,'0')}`;
+  }
+  function resetTimer(){
+    if(timerInterval){clearInterval(timerInterval);timerInterval=null}
+    const mins=Number($('timerMinutes').value);state.timerMinutes=mins;save();
+    timerRemaining=mins*60;$('timerStartBtn').textContent='Start';renderTimer();
+  }
+  function toggleTimer(){
+    const mins=Number($('timerMinutes').value);if(mins===0)return;
+    if(timerInterval){clearInterval(timerInterval);timerInterval=null;$('timerStartBtn').textContent='Resume';return;}
+    if(timerRemaining<=0)timerRemaining=mins*60;
+    $('timerStartBtn').textContent='Pause';
+    timerInterval=setInterval(()=>{timerRemaining--;renderTimer();if(timerRemaining<=0){clearInterval(timerInterval);timerInterval=null;$('timerDisplay').textContent='TIME';$('timerStartBtn').textContent='Start';try{navigator.vibrate&&navigator.vibrate([300,150,300])}catch(e){}}},1000);
+  }
+
+  $('addPlayerBtn').onclick=addPlayer;
+  $('playerName').addEventListener('keydown',e=>{if(e.key==='Enter') addPlayer();});
+  $('nextRoundBtn').onclick=()=>{makeRound();if(state.currentRound)resetTimer();};
+  $('timerStartBtn').onclick=toggleTimer;
+  $('timerResetBtn').onclick=resetTimer;
+  $('timerMinutes').onchange=resetTimer;
+  $('courtCount').onchange=()=>{state.courts=Math.max(1,Number($('courtCount').value)||1);save();render();};
+  $('modeSelect').onchange=()=>{state.mode=$('modeSelect').value;save();};
+  $('sessionEndType').onchange=()=>{state.endType=$('sessionEndType').value;save();renderReservation();};
+  $('endTime').onchange=()=>{state.endTime=$('endTime').value;save();renderReservation();};
+
+  $('resetBtn').onclick=()=>{
+    if(confirm('Start a new NextCuatro session? This clears the current session from this browser.')){
+      state=structuredClone(defaultState); save(); render();
+    }
+  };
+
+
+  render();
+  timerRemaining=(state.timerMinutes||12)*60;renderTimer();
+})();
+</script>
+</body>
+</html>
