@@ -4,8 +4,9 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <meta name="theme-color" content="#1f7a5c" />
-<title>NextCuatro v4.1</title>
+<title>NextCuatro v4.1.1</title>
 <style>
+
   :root{
     --bg:#f5f7f8; --card:#fff; --ink:#172026; --muted:#6d7a84; --line:#dfe5e8;
     --accent:#1f7a5c; --accent2:#e9f5f0; --warn:#fff3d6; --danger:#b73a3a;
@@ -142,151 +143,104 @@
   }
 
 
-.status-menu button.selected{background:#d9f99d;border-color:#65a30d;color:#365314;font-weight:800}
-.status-menu select{min-height:36px;border:1px solid var(--border);border-radius:9px;background:white;padding:5px 8px}
 
-/* v4.1 visual restoration — v3.1-inspired navy + pickleball green, mobile first */
+/* v4.1.1 — v3.1 layout preserved; only branding/compact-control additions */
 :root{
-  --navy:#102a43;
-  --navy2:#173f5f;
-  --green:#9bd23c;
-  --green-dark:#6f9f1e;
-  --page:#f4f7f9;
-  --card:#ffffff;
-  --text:#172b3a;
-  --muted:#667784;
-  --border:#dbe3e8;
+  --accent:#8fce32;
+  --accent2:#eef8df;
 }
-body{
-  background:var(--page);
-  color:var(--text);
-  -webkit-text-size-adjust:100%;
+body{background:#f5f7f8}
+.topbar{
+  background:#123b5d;
+  margin:-18px -18px 18px;
+  padding:15px 18px;
+  border-bottom:4px solid #8fce32;
+  color:white;
+  border-radius:0 0 16px 16px;
 }
-header{
-  background:linear-gradient(135deg,var(--navy),var(--navy2));
-  color:#fff;
-  border-bottom:5px solid var(--green);
-  padding:18px 20px;
-}
-header .brand{align-items:center;gap:14px}
-header .brand img{
-  background:#fff;
+.topbar h1{color:white}
+.topbar .subtle,.topbar .tiny{color:#dce9f1}
+.topbar .logo{
+  width:82px;height:82px;
   border-radius:14px;
-  padding:4px;
-  width:72px;
-  height:72px;
-  object-fit:contain;
+  box-shadow:none;
+  background:#123b5d;
 }
-header h1, header .title, header strong{color:#fff}
-header .subtle, header .tiny{color:#e9f2f7}
-.card{
-  background:var(--card);
-  border:1px solid var(--border);
-  border-radius:16px;
-  box-shadow:0 4px 14px rgba(16,42,67,.07);
+.topbar .toolbar .secondary{
+  background:white;
+  border-color:white;
+  color:#123b5d;
 }
-button.primary{
-  background:var(--green);
-  color:#18321a;
-  border-color:var(--green-dark);
-  font-weight:800;
-}
-button.primary:hover{filter:brightness(.97)}
-button.secondary{
-  background:#fff;
-  color:var(--navy);
-  border-color:#b9c8d2;
-}
-select,input,button{
-  min-height:44px;
-  font-size:16px;
-}
-.nextbar{
-  background:#fff;
-  border-top:1px solid var(--border);
-  padding-top:12px;
-}
-#nextRoundBtn{
-  min-height:54px;
-  font-size:17px;
-  border-radius:13px;
-  padding:12px 18px;
-}
-.modebox select,#timerMinutes,#courtCount,#sessionEndType,#endTime{
-  min-height:44px;
-}
-.status-menu{
+.modebox{
+  min-width:0;
   display:flex;
-  gap:7px;
-  flex-wrap:wrap;
-  justify-content:flex-end;
+  align-items:end;
+  gap:8px;
 }
-.status-menu button,.status-menu select{
-  min-height:40px;
+.modebox label{white-space:nowrap;margin-bottom:11px}
+.modebox select{width:auto;min-width:170px}
+.status-menu select{
+  width:auto;
+  min-width:110px;
+  padding:6px 8px;
+  font-size:12px;
+  min-height:32px;
 }
 .status-menu button.selected{
-  background:var(--green);
-  border-color:var(--green-dark);
-  color:#18321a;
+  background:var(--accent);
+  color:#17321a;
+  font-weight:700;
 }
-.court{
-  border-top:4px solid var(--green);
+button.primary{color:#17321a}
+.court{border-top:3px solid var(--accent)}
+@media(max-width:840px){
+  .topbar{margin:-10px -10px 10px;padding:13px 12px}
 }
-@media(max-width:720px){
-  header{padding:14px 14px 16px}
-  header .brand{align-items:center}
-  header .brand img{width:60px;height:60px;border-radius:12px}
-  .wrap,.app,.layout{padding-left:10px!important;padding-right:10px!important}
-  .card{border-radius:14px}
-  .hero-head{gap:12px}
-  .modebox{width:100%}
-  .modebox select{width:100%}
-  .timerbar{gap:8px}
-  .timerbar>*{min-width:0}
-  .player-add{grid-template-columns:1fr!important;gap:8px}
-  .player-add input,.player-add select,.player-add button{width:100%}
-  .player-row{
-    align-items:flex-start;
-    gap:9px;
-    flex-direction:column;
+@media(max-width:640px){
+  .app{width:100%;max-width:100%;overflow-x:hidden}
+  .topbar{
+    margin:-8px -8px 10px;
+    padding:12px 10px;
+    border-radius:0 0 14px 14px;
   }
-  .status-menu{
-    width:100%;
-    justify-content:flex-start;
+  .topbar .brand{width:100%;align-items:center}
+  .topbar .logo{width:72px;height:72px;flex:0 0 72px}
+  .topbar h1{font-size:23px}
+  .topbar .subtle{font-size:13px}
+  .modebox{
     display:grid;
-    grid-template-columns:1fr 1fr;
+    grid-template-columns:auto minmax(0,1fr);
+    align-items:center;
+    width:100%;
+    margin-top:10px;
+  }
+  .modebox label{margin:0}
+  .modebox select{width:100%;min-width:0}
+  .status-menu{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    width:100%;
+    gap:6px;
   }
   .status-menu button,.status-menu select{
     width:100%;
-    max-width:none!important;
-    min-height:44px;
+    min-width:0;
+    min-height:42px;
+    font-size:13px;
   }
-  .courts{grid-template-columns:1fr!important}
-  .nextbar{position:sticky;bottom:0;z-index:10;padding:10px 0 4px}
-  #nextRoundBtn{width:100%;min-height:58px;font-size:18px}
+  .player-row{overflow:hidden}
+  .court,.card,.panel,.hero{max-width:100%}
+  .nextbar{
+    position:sticky;
+    bottom:0;
+    z-index:8;
+    background:white;
+    padding:8px 0 max(6px,env(safe-area-inset-bottom));
+  }
 }
-@media(max-width:390px){
+@media(max-width:380px){
+  .topbar .logo{width:64px;height:64px;flex-basis:64px}
   .status-menu{grid-template-columns:1fr}
-  header .brand img{width:54px;height:54px}
-}
-
-
-/* v4.1 final compact pass */
-header{background:#123b5d!important;border-bottom:4px solid #8fcf32!important;padding:12px 16px!important}
-header .brand{gap:12px!important;align-items:center!important}
-header .brand img{width:76px!important;height:76px!important;padding:0!important;border-radius:12px!important;object-fit:cover!important;background:transparent!important}
-header .subtle{color:#d8e8f2!important;font-size:15px!important;margin-top:5px!important}
-.card{box-shadow:0 2px 8px rgba(16,42,67,.06)!important}
-.modebox{display:flex!important;align-items:center!important;gap:8px!important}
-.modebox label{margin:0!important;white-space:nowrap!important}
-.modebox select{width:auto!important;min-width:170px!important}
-#nextRoundBtn{background:#8fcf32!important;color:#17321a!important}
-@media(max-width:720px){
- header{padding:10px 12px!important}
- header .brand img{width:68px!important;height:68px!important}
- .modebox{display:grid!important;grid-template-columns:auto 1fr!important}
- .modebox select{width:100%!important;min-width:0!important}
- .card{padding:12px!important}
 }
 
 </style>
@@ -418,7 +372,7 @@ header .subtle{color:#d8e8f2!important;font-size:15px!important;margin-top:5px!i
     </main>
   </div>
 </div>
-<div class="footer">NextCuatro · v4.1 · © 2026 Todd Witte</div>
+<div class="footer">NextCuatro · v4.1.1 · © 2026 Todd Witte</div>
 
 <script>
 (() => {
