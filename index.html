@@ -361,7 +361,7 @@ input,select,button{max-width:100%}
           <input id="courtCount" type="number" min="1" max="20" value="4">
         </div>
       </div>
-
+      
       <div class="section-title" style="margin-top:20px">
         <h2>Players</h2>
       </div>
@@ -427,7 +427,7 @@ input,select,button{max-width:100%}
         <div id="waitingBox" class="waiting" style="display:none"></div>
 
         <div class="nextbar">
-          
+          <div class="subtle" id="reservationNote" style="display:none"></div>
           <button class="primary" id="nextRoundBtn">🔀 Create Round 1</button>
         </div>
       </section>
@@ -457,6 +457,8 @@ input,select,button{max-width:100%}
   const defaultState = {
     round: 0,
     courts: 4,
+    endType: 'open',
+    endTime: '',
     mode: 'smart',
     timerMinutes: 12,
     players: [],
@@ -790,6 +792,8 @@ input,select,button{max-width:100%}
     }
     state.courts = Math.max(1, Number($('courtCount').value)||1);
     state.mode = $('modeSelect').value;
+    state.endType = $('sessionEndType').value;
+    state.endTime = $('endTime').value;
 
     const voluntarySitters=state.players.filter(p=>(p.status==='active'||p.status==='leaving') && p.sitNext);
     const actives=activePlayers();
@@ -958,11 +962,20 @@ input,select,button{max-width:100%}
     return ({active:'Active',leaving:'Leaving after this round',left:'Left session'})[s]||s;
   }
 
+  function renderReservation(){
+    $('endTimeWrap').style.display = $('sessionEndType').value==='until' ? 'block' : 'none';
+    if(state.endType==='until' && state.endTime){
+      $('reservationNote').textContent=`Courts reserved until ${formatTime(state.endTime)}.`;
+    } else $('reservationNote').textContent='Open-ended session.';
+  }
+
   function render(){
     $('courtCount').value=state.courts;
+    $('sessionEndType').value=state.endType;
+    $('endTime').value=state.endTime;
     $('modeSelect').value=state.mode;
     $('timerMinutes').value=String(state.timerMinutes??12);
-    renderPlayers(); renderRound(); renderStats();
+    renderPlayers(); renderRound(); renderStats(); renderReservation();
   }
 
   function escapeHtml(s){
@@ -1003,7 +1016,9 @@ input,select,button{max-width:100%}
   $('timerResetBtn').onclick=resetTimer;
   $('timerMinutes').onchange=resetTimer;
   $('courtCount').onchange=()=>{state.courts=Math.max(1,Number($('courtCount').value)||1);save();render();};
-  $('modeSelect').onchange=()=>{state.mode=$('modeSelect').value;save();};save();renderReservation();};
+  $('modeSelect').onchange=()=>{state.mode=$('modeSelect').value;save();};
+  $('sessionEndType').onchange=()=>{state.endType=$('sessionEndType').value;save();renderReservation();};
+  $('endTime').onchange=()=>{state.endTime=$('endTime').value;save();renderReservation();};
 
   $('resetBtn').onclick=()=>{
     if(confirm('Start a new NextCuatro session? This clears the current session from this browser.')){
