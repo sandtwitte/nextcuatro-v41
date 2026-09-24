@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <meta name="theme-color" content="#1f7a5c" />
-<title>NextCuatro v4.1.4</title>
+<title>NextCuatro v4.1.5</title>
 <style>
 
   :root{
@@ -274,7 +274,7 @@ input,select,button{max-width:100%}
 }
 
 
-/* v4.1.4 layout correction */
+/* v4.1.5 layout correction */
 .grid > *, main, aside{min-width:0}
 .player-row{
   display:grid!important;
@@ -332,7 +332,7 @@ input,select,button{max-width:100%}
 }
 
 
-/* v4.1.4 — compact desktop court cards only */
+/* v4.1.5 — compact desktop court cards only */
 @media (min-width:841px){
   .courts{gap:12px!important}
   .court{padding:10px 16px!important;min-height:0!important}
@@ -392,7 +392,7 @@ input,select,button{max-width:100%}
       </div>
       <div class="player-add">
         <input id="playerName" placeholder="Name or nickname">
-        <select id="playerSkill" title="Private skill rating">
+        <select id="playerSkill" title="Skill rating">
           <option value="">Unrated</option>
           <option>1.0</option><option>1.25</option><option>1.5</option><option>1.75</option><option>2.0</option><option>2.25</option><option>2.5</option><option>2.75</option><option>3.0</option><option>3.25</option><option>3.5</option><option>3.75</option><option>4.0</option><option>4.25</option><option>4.5</option><option>4.75</option><option>5.0</option>
         </select>
@@ -409,7 +409,7 @@ input,select,button{max-width:100%}
         </details>
       </div>
 
-      <div class="footer-note">Skill ratings are private and are not shown on the organizer court board.</div>
+      <div class="footer-note"></div>
     </aside>
 
     <main>
@@ -474,7 +474,7 @@ input,select,button{max-width:100%}
     </main>
   </div>
 </div>
-<div class="footer">NextCuatro · v4.1.4 · © 2026 Todd Witte</div>
+<div class="footer">NextCuatro · v4.1.5 · © 2026 Todd Witte</div>
 
 <script>
 (() => {
@@ -514,7 +514,7 @@ input,select,button{max-width:100%}
     return state.players.filter(p => (p.status === 'active' || p.status === 'leaving') && !p.sitNext);
   }
   function normalizedName(s){ return s.trim().replace(/\s+/g,' ').toLowerCase(); }
-  function rating(p){ return Number.isFinite(p.adaptiveRating) ? p.adaptiveRating : (p.skill ?? 3.0); }
+  function rating(p){ return (p.useAdaptive!==false && Number.isFinite(p.adaptiveRating)) ? p.adaptiveRating : (p.skill ?? 3.0); }
 
   function addPlayer(){
     const raw = $('playerName').value.trim().replace(/\s+/g,' ');
@@ -531,7 +531,7 @@ input,select,button{max-width:100%}
       id:uid(), name:raw, skill, status:'active',
       played:0, sat:0, lastSatRound:-999, joinedRound:state.round,
       partners:{}, opponents:{}, wins:0, losses:0,
-      fixedPartnerId:null, sitNext:false, adaptiveRating:skill ?? 3.0, resultGames:0
+      fixedPartnerId:null, sitNext:false, adaptiveRating:skill, resultGames:0, useAdaptive:true
     });
     $('playerName').value='';
     $('playerSkill').value='';
@@ -796,14 +796,14 @@ input,select,button{max-width:100%}
         p.resultGames=(p.resultGames||0)+1;
         if(p.resultGames>3){
           const k=p.resultGames<=5?.12:p.resultGames<=10?.08:.05;
-          p.adaptiveRating=Math.max(1,Math.min(5,rating(p)+k*delta));
+          p.adaptiveRating=Math.max(1,Math.min(5,(Number.isFinite(p.adaptiveRating)?p.adaptiveRating:3.0)+k*delta));
         }
       }
       for(const p of B){
         p.resultGames=(p.resultGames||0)+1;
         if(p.resultGames>3){
           const k=p.resultGames<=5?.12:p.resultGames<=10?.08:.05;
-          p.adaptiveRating=Math.max(1,Math.min(5,rating(p)-k*delta));
+          p.adaptiveRating=Math.max(1,Math.min(5,(Number.isFinite(p.adaptiveRating)?p.adaptiveRating:3.0)-k*delta));
         }
       }
     });
@@ -889,19 +889,21 @@ input,select,button{max-width:100%}
       row.innerHTML=`
         <div style="min-width:0">
           <div class="player-name">${escapeHtml(p.name)}</div>
-          <div class="tiny">${p.skill ? 'Private skill '+p.skill : 'Unrated'} · ${statusLabel(p.status)}${partner?' · Team: '+escapeHtml(partner.name):''}</div>
+          <div class="tiny">${p.skill ? 'Skill '+p.skill : 'Unrated'} · ${statusLabel(p.status)}${partner?' · Team: '+escapeHtml(partner.name):''}</div>
         </div>
         <div class="status-menu">
           <button data-action="sit" class="${p.sitNext?'selected':''}">Sit Out</button>
           <select data-action="pair" title="Fixed team for this session" style="max-width:150px">
             <option value="">Solo</option>${pairOptions}
           </select>
-          <button data-action="leaving">Leave after round</button>
-          <button data-action="left">Done</button>
+         
+          <label class="tiny" style="display:flex;align-items:center;gap:4px;white-space:nowrap"><input type="checkbox" data-action="adaptive" ${p.useAdaptive!==false?'checked':''}> Use Adaptive</label>
+          <button data-action="left">Done Playing</button>
         </div>`;
       row.querySelector('[data-action="sit"]').onclick=()=>toggleSit(p.id);
       row.querySelector('[data-action="pair"]').onchange=e=>setPair(p.id,e.target.value||null);
-      row.querySelector('[data-action="leaving"]').onclick=()=>setStatus(p.id,'leaving');
+     
+      row.querySelector('[data-action="adaptive"]').onchange=e=>{p.useAdaptive=e.target.checked;save();render();};
       row.querySelector('[data-action="left"]').onclick=()=>setStatus(p.id,'left');
       list.appendChild(row);
     }
@@ -933,7 +935,7 @@ input,select,button{max-width:100%}
     apply(prev,-1); cr.results[courtIndex]=winner; apply(winner,1);
     save();render();
   }
-  function finalizeLeavers(){state.players.forEach(p=>{if(p.status==='leaving')p.status='left'});}
+  function finalizeLeavers(){}
 
   function renderRound(){
     const area=$('courtArea'); area.innerHTML='';
@@ -985,7 +987,7 @@ input,select,button{max-width:100%}
         <td>${p.played}</td>
         <td>${p.sat}</td>
         <td>${p.wins||0}–${p.losses||0}</td>
-        <td>${Number(rating(p)).toFixed(2)}</td>
+        <td>${Number.isFinite(p.adaptiveRating) ? Number(p.adaptiveRating).toFixed(2) : '—'}</td>
         <td>${Object.keys(p.partners).length}</td>
         <td>${statusLabel(p.status)}</td>`;
       body.appendChild(tr);
