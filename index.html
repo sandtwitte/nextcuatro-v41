@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <meta name="theme-color" content="#1f7a5c" />
-<title>NextCuatro v4.1.5</title>
+<title>NextCuatro v4.1.6</title>
 <style>
 
   :root{
@@ -274,7 +274,7 @@ input,select,button{max-width:100%}
 }
 
 
-/* v4.1.5 layout correction */
+/* v4.1.6 layout correction */
 .grid > *, main, aside{min-width:0}
 .player-row{
   display:grid!important;
@@ -332,7 +332,7 @@ input,select,button{max-width:100%}
 }
 
 
-/* v4.1.5 — compact desktop court cards only */
+/* v4.1.6 — compact desktop court cards only */
 @media (min-width:841px){
   .courts{gap:12px!important}
   .court{padding:10px 16px!important;min-height:0!important}
@@ -366,12 +366,11 @@ input,select,button{max-width:100%}
   <div class="grid">
     <aside class="card panel">
       <div class="section-title">
-        <h2>Session</h2>
+        <h2>Available Courts</h2>
         <span class="pill" id="activeCountPill">0 active</span>
       </div>
       <div class="setup-row">
         <div>
-          <label>Courts</label>
           <input id="courtCount" type="number" min="1" max="20" value="4">
         </div>
         <div style="display:none">
@@ -474,7 +473,7 @@ input,select,button{max-width:100%}
     </main>
   </div>
 </div>
-<div class="footer">NextCuatro · v4.1.5 · © 2026 Todd Witte</div>
+<div class="footer">NextCuatro · v4.1.6 · © 2026 Todd Witte</div>
 
 <script>
 (() => {
@@ -507,8 +506,11 @@ input,select,button{max-width:100%}
     adaptiveRating:null,resultGames:0,...p
   }));
   state.players.forEach(p=>{
-    if(p.adaptiveRating==null) p.adaptiveRating = p.skill ?? 3.0;
-  });
+  if(p.status==='leaving') p.status='active';
+  if(p.skill==null && (p.resultGames||0)===0) p.adaptiveRating=null;
+  else if(p.adaptiveRating==null && p.skill!=null) p.adaptiveRating=p.skill;
+  if(p.useAdaptive==null) p.useAdaptive=true;
+});
 
   function activePlayers(){
     return state.players.filter(p => (p.status === 'active' || p.status === 'leaving') && !p.sitNext);
@@ -897,13 +899,13 @@ input,select,button{max-width:100%}
             <option value="">Solo</option>${pairOptions}
           </select>
          
-          <label class="tiny" style="display:flex;align-items:center;gap:4px;white-space:nowrap"><input type="checkbox" data-action="adaptive" ${p.useAdaptive!==false?'checked':''}> Use Adaptive</label>
+          <button data-action="adaptive" class="${p.useAdaptive!==false && Number.isFinite(p.adaptiveRating)?'selected':''}" ${!Number.isFinite(p.adaptiveRating)?'disabled':''}>Adaptive: ${Number.isFinite(p.adaptiveRating) ? (p.useAdaptive!==false?'ON':'OFF') : '—'}</button>
           <button data-action="left">Done Playing</button>
         </div>`;
       row.querySelector('[data-action="sit"]').onclick=()=>toggleSit(p.id);
       row.querySelector('[data-action="pair"]').onchange=e=>setPair(p.id,e.target.value||null);
      
-      row.querySelector('[data-action="adaptive"]').onchange=e=>{p.useAdaptive=e.target.checked;save();render();};
+      row.querySelector('[data-action="adaptive"]').onclick=()=>{if(!Number.isFinite(p.adaptiveRating))return;p.useAdaptive=p.useAdaptive===false;save();render();};
       row.querySelector('[data-action="left"]').onclick=()=>setStatus(p.id,'left');
       list.appendChild(row);
     }
