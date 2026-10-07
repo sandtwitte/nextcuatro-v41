@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <meta name="theme-color" content="#1f7a5c" />
-<title>NextCuatro v4.1.7</title>
+<title>NextCuatro v4.2.1</title>
 <style>
 
   :root{
@@ -66,7 +66,7 @@
   table{width:100%;border-collapse:collapse;font-size:14px}
   th,td{text-align:left;padding:9px;border-bottom:1px solid var(--line)}
   th{color:var(--muted);font-weight:600}
-  .pill{display:inline-block;padding:4px 8px;border-radius:999px;background:var(--accent2);color:var(--accent);font-size:12px;font-weight:700}
+  .pill{display:inline-block;padding:7px 12px;border-radius:999px;background:var(--accent2);color:var(--accent);font-size:17px;font-weight:800}
   .notice{margin:10px 0;padding:10px 12px;border-radius:10px;background:#fff7e6;color:#7a5b15;font-size:13px}
   .footer-note{font-size:12px;color:var(--muted);margin-top:14px}
 
@@ -274,7 +274,7 @@ input,select,button{max-width:100%}
 }
 
 
-/* v4.1.7 layout correction */
+/* v4.2 layout correction */
 .grid > *, main, aside{min-width:0}
 .player-row{
   display:grid!important;
@@ -332,7 +332,7 @@ input,select,button{max-width:100%}
 }
 
 
-/* v4.1.7 — compact desktop court cards only */
+/* v4.2 — compact desktop court cards only */
 @media (min-width:841px){
   .courts{gap:12px!important}
   .court{padding:10px 16px!important;min-height:0!important}
@@ -344,6 +344,16 @@ input,select,button{max-width:100%}
   .court .result-row button{padding:6px 10px!important}
   .nextbar{margin-top:10px!important;padding-top:0!important}
 }
+
+
+  .team-pick{display:block;width:100%;border:0;background:transparent;color:inherit;text-align:left;padding:5px 7px;border-radius:10px;font:inherit;font-weight:750;cursor:pointer}
+  #nextRoundBtn{display:inline-flex;align-items:center;justify-content:center;gap:8px}
+  #nextRoundBtn .next-logo{width:24px;height:24px;object-fit:contain;border-radius:5px;flex:0 0 auto}
+  .team-pick:hover{background:#f1f4f5}
+  .team-pick.selected{background:var(--accent2);color:var(--accent);outline:2px solid var(--accent);}
+  .vs{display:block;width:100%;text-align:left!important;padding-left:5ch!important;box-sizing:border-box;margin-left:0!important;margin-right:0!important}
+  .timer-display.timer-ended{font-size:24px;line-height:1.05;min-width:220px;text-align:center;animation:timerFlash .8s ease-in-out infinite alternate;color:#b42318}
+  @keyframes timerFlash{from{opacity:1;transform:scale(1)}to{opacity:.42;transform:scale(1.04)}}
 
 </style>
 </head>
@@ -358,7 +368,7 @@ input,select,button{max-width:100%}
       </div>
     </div>
     <div class="toolbar">
-      <button class="secondary" id="resetBtn">New Session</button>
+      <button class="secondary" id="resetBtn">New Session / Clear Everything</button>
       
     </div>
   </div>
@@ -393,7 +403,7 @@ input,select,button{max-width:100%}
         <input id="playerName" placeholder="Name or nickname">
         <select id="playerSkill" title="Skill rating">
           <option value="">Unrated</option>
-          <option>1.0</option><option>1.25</option><option>1.5</option><option>1.75</option><option>2.0</option><option>2.25</option><option>2.5</option><option>2.75</option><option>3.0</option><option>3.25</option><option>3.5</option><option>3.75</option><option>4.0</option><option>4.25</option><option>4.5</option><option>4.75</option><option>5.0</option>
+          <option>1.0</option><option>1.25</option><option>1.5</option><option>1.75</option><option>2.0</option><option>2.25</option><option>2.5</option><option>2.75</option><option>3.0</option><option>3.25</option><option>3.5</option><option>3.75</option><option>4.0</option><option>4.25</option><option>4.5</option><option>4.75</option><option>5.0</option><option value="5.25">5.0+</option>
         </select>
         <button class="primary" id="addPlayerBtn">Add</button>
       </div>
@@ -441,18 +451,17 @@ input,select,button{max-width:100%}
           <div class="timer-display" id="timerDisplay">12:00</div>
           <button class="secondary" id="timerStartBtn">Start</button>
           <button class="secondary" id="timerResetBtn">Reset</button>
-          <div class="tiny">At zero: finish the rally. If tied, play one deciding point.</div>
         </div>
         <div id="courtArea" class="courts"></div>
         <div id="emptyState" class="empty">
-          NextCuatro will build court assignments from whoever is <strong>Active</strong> when you press Next Round.
+          NextCuatro will build court assignments from whoever is <strong>Active</strong> when you press Next Cuatro.
         </div>
 
         <div id="waitingBox" class="waiting" style="display:none"></div>
 
         <div class="nextbar">
           <div class="subtle" id="reservationNote" style="display:none"></div>
-          <button class="primary" id="nextRoundBtn">🔀 Create Round 1</button>
+          <button class="primary" id="nextRoundBtn"><img class="next-logo" src="nextcuatro-logo.png" alt="">Create Round 1</button>
         </div>
       </section>
 
@@ -473,7 +482,7 @@ input,select,button{max-width:100%}
     </main>
   </div>
 </div>
-<div class="footer">NextCuatro · v4.1.7 · © 2026 Todd Witte</div>
+<div class="footer">NextCuatro · v4.2.1 · © 2026 Todd Witte</div>
 
 <script>
 (() => {
@@ -562,7 +571,13 @@ input,select,button{max-width:100%}
   function toggleSit(id){
     const p=state.players.find(x=>x.id===id);
     if(!p) return;
-    p.sitNext=!p.sitNext;
+    const next=!p.sitNext;
+    p.sitNext=next;
+    // A fixed pair is a team in every mode; voluntary Sit Out applies to both.
+    if(p.fixedPartnerId){
+      const q=state.players.find(x=>x.id===p.fixedPartnerId);
+      if(q && (q.status==='active'||q.status==='leaving')) q.sitNext=next;
+    }
     save();render();
   }
 
@@ -673,52 +688,30 @@ input,select,button{max-width:100%}
 
   function chooseParticipants(players, capacity, mode){
     if(players.length<=capacity) return {playing:[...players],waiting:[]};
-    const waitCount=players.length-capacity;
-
-    // Similar Skill: choose sitters locally from crowded skill neighborhoods.
-    if(mode==='similar'){
-      const sorted=[...players].sort((a,b)=>rating(b)-rating(a));
-      let best=null,bestCost=Infinity;
-      // Randomly sample possible waiting sets, strongly penalizing disruption of skill adjacency.
-      for(let t=0;t<300;t++){
-        const candidates=[...sorted].sort((a,b)=>sitScore(a)-sitScore(b)+((Math.random()-.5)*20));
-        const waiting=[];
-        for(const p of candidates){
-          if(waiting.length>=waitCount) break;
-          if(p.fixedPartnerId) continue; // avoid splitting fixed pairs
-          waiting.push(p);
-        }
-        if(waiting.length<waitCount) continue;
-        const wids=new Set(waiting.map(p=>p.id));
-        const playing=sorted.filter(p=>!wids.has(p.id));
-        let cost=waiting.reduce((s,p)=>s+sitScore(p),0);
-        for(let i=0;i<playing.length;i+=4){
-          const g=playing.slice(i,i+4);
-          if(g.length===4) cost+=(rating(g[0])-rating(g[3]))*35;
-        }
-        if(cost<bestCost){best={playing,waiting};bestCost=cost;}
-      }
-      if(best) return best;
-    }
-
     const units=makeUnits(players);
     let best=null,bestCost=Infinity;
-    for(let t=0;t<500;t++){
-      const order=shuffle(units);
-      const waiting=[], playing=[];
-      let slots=capacity;
+    // Choose whole fixed-pair units whenever an exact-capacity solution exists.
+    for(let t=0;t<900;t++){
+      const order=shuffle(units), waiting=[], playing=[]; let slots=capacity;
       for(const u of order){
-        if(u.length<=slots){ playing.push(...u);slots-=u.length; }
-        else waiting.push(...u);
+        if(u.length<=slots){playing.push(...u);slots-=u.length;} else waiting.push(...u);
       }
       if(playing.length!==capacity) continue;
-      let cost=waiting.reduce((s,p)=>s+sitScore(p),0);
+      let cost=waiting.reduce((sum,p)=>sum+sitScore(p),0);
+      // Similar Skill still prioritizes global sit fairness, with a small preference
+      // for a playing pool that can form close-skill courts.
+      if(mode==='similar'){
+        const r=[...playing].sort((a,b)=>rating(b)-rating(a));
+        for(let i=0;i<r.length;i+=4){const g=r.slice(i,i+4);if(g.length===4)cost+=(rating(g[0])-rating(g[3]))*18;}
+      }
       if(cost<bestCost){best={playing,waiting};bestCost=cost;}
     }
     if(best) return best;
 
-    // Fallback if pair structure makes exact capacity impossible.
+    // Rare fallback: if pair sizes make exact court capacity impossible, allow one
+    // member of a fixed pair to sit. This is the only circumstance that splits a pair.
     const sorted=[...players].sort((a,b)=>sitScore(a)-sitScore(b));
+    const waitCount=players.length-capacity;
     const waiting=sorted.slice(0,waitCount), wids=new Set(waiting.map(p=>p.id));
     return {playing:players.filter(p=>!wids.has(p.id)),waiting};
   }
@@ -747,27 +740,36 @@ input,select,button{max-width:100%}
   }
 
   function buildSimilar(players){
-    // Skill pods dominate: highest four on Court 1, then progressively lower courts.
-    // Repeat avoidance only changes teams INSIDE each four-person pod.
-    const sorted=[...players].sort((a,b)=>rating(b)-rating(a));
-    const groups=[];
-    for(let i=0;i<sorted.length;i+=4) groups.push(sorted.slice(i,i+4));
-    // Repair fixed pairs that straddle adjacent pod boundaries where possible.
-    for(let i=0;i<groups.length-1;i++){
-      for(const p of [...groups[i]]){
-        if(!p.fixedPartnerId) continue;
-        const j=groups[i+1].findIndex(x=>x.id===p.fixedPartnerId);
-        if(j>=0){
-          const candidate=groups[i].filter(x=>x.id!==p.id && !x.fixedPartnerId)
-            .sort((a,b)=>Math.abs(rating(a)-rating(groups[i+1][j]))-Math.abs(rating(b)-rating(groups[i+1][j])))[0];
-          if(candidate){
-            const ai=groups[i].indexOf(candidate);
-            groups[i][ai]=groups[i+1][j]; groups[i+1][j]=candidate;
-          }
-        }
+    // Fixed pairs are indivisible teammates. Search court compositions that keep
+    // pairs together while minimizing skill spread, then order courts high-to-low.
+    const units=makeUnits(players);
+    let best=null,bestCost=Infinity;
+    const trials=Math.min(1800,500+players.length*55);
+    for(let t=0;t<trials;t++){
+      const order=shuffle(units), groups=[]; let current=[],ok=true;
+      for(const u of order){
+        if(current.length+u.length>4){ok=false;break;}
+        current.push(...u);
+        if(current.length===4){groups.push(current);current=[];}
       }
+      if(!ok||current.length||groups.length*4!==players.length) continue;
+      let cost=0; const pairings=[];
+      for(const g of groups){
+        const rs=g.map(rating);
+        cost+=(Math.max(...rs)-Math.min(...rs))*45 + groupRepeatCost(g)*.6;
+        const pairing=bestTeams(g,'similar');
+        if(!respectsFixed(pairing)){ok=false;break;}
+        pairings.push(pairing);
+      }
+      if(ok&&cost<bestCost){best=pairings;bestCost=cost;}
     }
-    return groups.map(g=>bestTeams(g,'similar'));
+    if(!best) return buildSmart(players);
+    best.sort((x,y)=>{
+      const ax=x.flat().reduce((s,p)=>s+rating(p),0)/4;
+      const ay=y.flat().reduce((s,p)=>s+rating(p),0)/4;
+      return ay-ax;
+    });
+    return best;
   }
 
   function buildBalanced(players){
@@ -899,8 +901,8 @@ input,select,button{max-width:100%}
       const row=document.createElement('div');
       row.className='player-row '+(p.sitNext?'temp ':'')+(p.status==='leaving'?'leaving':'');
       const partner=state.players.find(x=>x.id===p.fixedPartnerId);
-      const skillValues=['','1.0','1.25','1.5','1.75','2.0','2.25','2.5','2.75','3.0','3.25','3.5','3.75','4.0','4.25','4.5','4.75','5.0'];
-      const skillOptions=skillValues.map(v=>`<option value="${v}" ${(v===''&&p.skill==null)||(v!==''&&Number(v)===p.skill)?'selected':''}>${v||'Unrated'}</option>`).join('');
+      const skillValues=['','1.0','1.25','1.5','1.75','2.0','2.25','2.5','2.75','3.0','3.25','3.5','3.75','4.0','4.25','4.5','4.75','5.0','5.25'];
+      const skillOptions=skillValues.map(v=>`<option value="${v}" ${(v===''&&p.skill==null)||(v!==''&&Number(v)===p.skill)?'selected':''}>${v===''?'Unrated':(v==='5.25'?'5.0+':v)}</option>`).join('');
       const pairOptions=visible.filter(x=>x.id!==p.id && !x.sitNext).map(x=>
         `<option value="${x.id}" ${p.fixedPartnerId===x.id?'selected':''}>Pair: ${escapeHtml(x.name)}</option>`).join('');
       row.innerHTML=`
@@ -966,7 +968,7 @@ input,select,button{max-width:100%}
       $('roundTitle').textContent='Ready to start';
       $('statsLine').textContent='Add players, choose a mode, then create the first round.';
       $('waitingBox').style.display='none';
-      $('nextRoundBtn').textContent='🔀 Create Round 1';
+      $('nextRoundBtn').innerHTML=nextButtonHtml('Create Round 1');
       return;
     }
     $('emptyState').style.display='none';
@@ -981,13 +983,9 @@ input,select,button{max-width:100%}
       const result=(cr.results||[])[idx]??null;
       card.innerHTML=`
         <h3>COURT ${idx+1}</h3>
-        <div class="team">${escapeHtml(t1[0])} + ${escapeHtml(t1[1])}</div>
+        <button class="team team-pick ${result==='A'?'selected':''}" data-result="A" title="Tap to record this team as winner">${escapeHtml(t1[0])} + ${escapeHtml(t1[1])}</button>
         <div class="vs">vs.</div>
-        <div class="team">${escapeHtml(t2[0])} + ${escapeHtml(t2[1])}</div>
-        <div class="result-buttons">
-          <button class="${result==='A'?'selected':''}" data-result="A">${escapeHtml(t1[0])} + ${escapeHtml(t1[1])} WON</button>
-          <button class="${result==='B'?'selected':''}" data-result="B">${escapeHtml(t2[0])} + ${escapeHtml(t2[1])} WON</button>
-        </div>`;
+        <button class="team team-pick ${result==='B'?'selected':''}" data-result="B" title="Tap to record this team as winner">${escapeHtml(t2[0])} + ${escapeHtml(t2[1])}</button>`;
       card.querySelectorAll('[data-result]').forEach(btn=>btn.onclick=()=>recordResult(idx,btn.dataset.result));
       area.appendChild(card);
     });
@@ -995,7 +993,7 @@ input,select,button{max-width:100%}
       $('waitingBox').style.display='block';
       $('waitingBox').innerHTML=`<strong>Sitting this round out:</strong> ${cr.waiting.map(nameById).map(escapeHtml).join(', ')}`;
     } else $('waitingBox').style.display='none';
-    $('nextRoundBtn').textContent=`🔀 Next Round`;
+    $('nextRoundBtn').innerHTML=nextButtonHtml('Next Cuatro');
   }
 
   function renderStats(){
@@ -1049,21 +1047,40 @@ input,select,button{max-width:100%}
   let timerInterval=null,timerRemaining=(state.timerMinutes||12)*60;
   function renderTimer(){
     const mins=Number($('timerMinutes').value);
-    if(mins===0&&!timerInterval){$('timerDisplay').textContent='Manual';return;}
+    if(mins===0&&!timerInterval){$('timerDisplay').classList.remove('timer-ended');$('timerDisplay').textContent='Manual';return;}
     const m=Math.floor(timerRemaining/60),s=timerRemaining%60;
-    $('timerDisplay').textContent=`${m}:${String(s).padStart(2,'0')}`;
+    $('timerDisplay').classList.remove('timer-ended');$('timerDisplay').textContent=`${m}:${String(s).padStart(2,'0')}`;
   }
   function resetTimer(){
     if(timerInterval){clearInterval(timerInterval);timerInterval=null}
     const mins=Number($('timerMinutes').value);state.timerMinutes=mins;save();
     timerRemaining=mins*60;$('timerStartBtn').textContent='Start';renderTimer();
   }
+  let audioCtx=null;
+  function ensureAudio(){
+    try{if(!audioCtx)audioCtx=new (window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==='suspended')audioCtx.resume();}catch(e){}
+  }
+  function playEndAlert(){
+    try{
+      ensureAudio(); if(!audioCtx)return;
+      const now=audioCtx.currentTime+.03;
+      const starts=[0,.48,.96,1.85,2.33,2.81];
+      starts.forEach((off,i)=>{
+        const o=audioCtx.createOscillator(),g=audioCtx.createGain();
+        o.type='square';o.frequency.value=[880,1047,880,880,1047,880][i];
+        g.gain.setValueAtTime(.0001,now+off);g.gain.exponentialRampToValueAtTime(.34,now+off+.018);
+        g.gain.setValueAtTime(.34,now+off+.27);g.gain.exponentialRampToValueAtTime(.0001,now+off+.38);
+        o.connect(g);g.connect(audioCtx.destination);o.start(now+off);o.stop(now+off+.4);
+      });
+    }catch(e){}
+  }
+
   function toggleTimer(){
-    const mins=Number($('timerMinutes').value);if(mins===0)return;
+    const mins=Number($('timerMinutes').value);if(mins===0)return;ensureAudio();
     if(timerInterval){clearInterval(timerInterval);timerInterval=null;$('timerStartBtn').textContent='Resume';return;}
     if(timerRemaining<=0)timerRemaining=mins*60;
     $('timerStartBtn').textContent='Pause';
-    timerInterval=setInterval(()=>{timerRemaining--;renderTimer();if(timerRemaining<=0){clearInterval(timerInterval);timerInterval=null;$('timerDisplay').textContent='TIME';$('timerStartBtn').textContent='Start';try{navigator.vibrate&&navigator.vibrate([300,150,300])}catch(e){}}},1000);
+    timerInterval=setInterval(()=>{timerRemaining--;renderTimer();if(timerRemaining<=0){clearInterval(timerInterval);timerInterval=null;$('timerDisplay').textContent='END OF TIMED GAME';$('timerDisplay').classList.add('timer-ended');$('timerStartBtn').textContent='Start';playEndAlert();try{navigator.vibrate&&navigator.vibrate([300,150,300,450,300,150,300])}catch(e){}}},1000);
   }
 
   $('addPlayerBtn').onclick=addPlayer;
@@ -1078,7 +1095,7 @@ input,select,button{max-width:100%}
   $('endTime').onchange=()=>{state.endTime=$('endTime').value;save();renderReservation();};
 
   $('resetBtn').onclick=()=>{
-    if(confirm('Start a new NextCuatro session? This clears the current session from this browser.')){
+    if(confirm('Start a new session?\n\nThis will erase all players, pairings, results, and session data and start fresh.\n\nAre you sure you want to clear everything?')){
       state=structuredClone(defaultState); save(); render();
     }
   };
