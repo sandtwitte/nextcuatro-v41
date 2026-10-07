@@ -483,7 +483,7 @@ input,select,button{max-width:100%}
     </main>
   </div>
 </div>
-<div class="footer">NextCuatro · v4.3.2 · © 2026 Todd Witte</div>
+<div class="footer">NextCuatro · v4.3.3 · © 2026 Todd Witte</div>
 
 <script>
 (() => {
@@ -1007,7 +1007,7 @@ input,select,button{max-width:100%}
         <td>${Number(p.played)||0}</td>
         <td>${Number(p.sat)||0}</td>
         <td>${Number(p.wins)||0}–${Number(p.losses)||0}</td>
-        <td>${Number.isFinite(p.adaptiveRating) ? Number(p.adaptiveRating).toFixed(2) : '—'}</td>
+        <td>${p.skill!=null && Number.isFinite(p.adaptiveRating) ? Number(p.adaptiveRating).toFixed(2) : '—'}</td>
         <td>${Object.keys(p.partners||{}).length}</td>
         <td>${statusLabel(p.status||'active')}</td>`;
       body.appendChild(tr);
