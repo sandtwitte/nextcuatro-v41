@@ -483,7 +483,7 @@ input,select,button{max-width:100%}
     </main>
   </div>
 </div>
-<div class="footer">NextCuatro · v4.3.1 · © 2026 Todd Witte</div>
+<div class="footer">NextCuatro · v4.3.2 · © 2026 Todd Witte</div>
 
 <script>
 (() => {
@@ -999,11 +999,11 @@ input,select,button{max-width:100%}
 
   function renderStats(){
     const body=$('statsBody'); body.innerHTML='';
-    const ordered=[...state.players].sort((a,b)=>a.name.localeCompare(b.name));
+    const ordered=[...state.players].sort((a,b)=>String(a.name??'').localeCompare(String(b.name??'')));
     for(const p of ordered){
       const tr=document.createElement('tr');
       tr.innerHTML=`
-        <td>${escapeHtml(p.name)}</td>
+        <td>${escapeHtml(p.name??'')}</td>
         <td>${Number(p.played)||0}</td>
         <td>${Number(p.sat)||0}</td>
         <td>${Number(p.wins)||0}–${Number(p.losses)||0}</td>
@@ -1031,7 +1031,7 @@ input,select,button{max-width:100%}
     $('endTime').value=state.endTime;
     $('modeSelect').value=state.mode;
     $('timerMinutes').value=String(state.timerMinutes??12);
-    renderPlayers(); renderRound(); renderStats(); renderReservation();
+    renderPlayers(); renderStats(); renderRound(); renderReservation();
   }
 
   function escapeHtml(s){
