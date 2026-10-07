@@ -428,7 +428,7 @@ input,select,button{max-width:100%}
         <div class="hero-head">
           <div>
             <div class="round-title" id="roundTitle">Ready to start</div>
-            <div class="statsline" id="statsLine">Add players, choose a mode, then create the first round.</div>
+            <div class="statsline" id="statsLine">Add players, choose a mode, then create the first game.</div>
           </div>
           <div class="modebox">
             <label>Shuffle mode</label>
@@ -444,7 +444,6 @@ input,select,button{max-width:100%}
         <div class="timerbar">
           <div><label>Round timer</label>
             <select id="timerMinutes">
-              <option value="0">Manual</option>
               <option value="10">10 minutes</option>
               <option value="12" selected>12 minutes</option>
               <option value="15">15 minutes</option>
@@ -463,14 +462,14 @@ input,select,button{max-width:100%}
 
         <div class="nextbar">
           <div class="subtle" id="reservationNote" style="display:none"></div>
-          <button class="primary" id="nextRoundBtn"><img class="next-logo" src="nextcuatro-logo.png" alt="">Create Round 1</button>
+          <button class="primary" id="nextRoundBtn"><img class="next-logo" src="nextcuatro-logo.png" alt="">Next Cuatro!</button>
         </div>
       </section>
 
       <section class="card panel history">
         <div class="section-title">
           <h2>Session fairness</h2>
-          <span class="subtle">Rounds, sit-outs, partners</span>
+          <span class="subtle">Games, sit-outs, partners</span>
         </div>
         <div style="overflow:auto">
           <table>
@@ -484,7 +483,7 @@ input,select,button{max-width:100%}
     </main>
   </div>
 </div>
-<div class="footer">NextCuatro · v4.3 · © 2026 Todd Witte</div>
+<div class="footer">NextCuatro · v4.3.1 · © 2026 Todd Witte</div>
 
 <script>
 (() => {
@@ -968,15 +967,15 @@ input,select,button{max-width:100%}
     if(!cr){
       $('emptyState').style.display='block';
       $('roundTitle').textContent='Ready to start';
-      $('statsLine').textContent='Add players, choose a mode, then create the first round.';
+      $('statsLine').textContent='Add players, choose a mode, then create the first game.';
       $('waitingBox').style.display='none';
       $('nextRoundBtn').innerHTML=nextButtonHtml('Next Cuatro!');
       return;
     }
     $('emptyState').style.display='none';
-    $('roundTitle').textContent=`Round ${cr.number}`;
+    $('roundTitle').textContent=`Game ${cr.number}`;
     const activeN=activePlayers().length;
-    $('statsLine').textContent=`${cr.courts.length} courts · ${activeN} currently active · ${cr.waiting.length} sitting this round out`;
+    $('statsLine').textContent=`${cr.courts.length} courts · ${activeN} currently active · ${cr.waiting.length} sitting this game out`;
     cr.courts.forEach((court,idx)=>{
       const card=document.createElement('div');
       card.className='court';
@@ -993,7 +992,7 @@ input,select,button{max-width:100%}
     });
     if(cr.waiting.length){
       $('waitingBox').style.display='block';
-      $('waitingBox').innerHTML=`<strong>Sitting this round out:</strong> ${cr.waiting.map(nameById).map(escapeHtml).join(', ')}`;
+      $('waitingBox').innerHTML=`<strong>Sitting this game out:</strong> ${cr.waiting.map(nameById).map(escapeHtml).join(', ')}`;
     } else $('waitingBox').style.display='none';
     $('nextRoundBtn').innerHTML=nextButtonHtml('Next Cuatro!');
   }
@@ -1005,12 +1004,12 @@ input,select,button{max-width:100%}
       const tr=document.createElement('tr');
       tr.innerHTML=`
         <td>${escapeHtml(p.name)}</td>
-        <td>${p.played}</td>
-        <td>${p.sat}</td>
-        <td>${p.wins||0}–${p.losses||0}</td>
+        <td>${Number(p.played)||0}</td>
+        <td>${Number(p.sat)||0}</td>
+        <td>${Number(p.wins)||0}–${Number(p.losses)||0}</td>
         <td>${Number.isFinite(p.adaptiveRating) ? Number(p.adaptiveRating).toFixed(2) : '—'}</td>
-        <td>${Object.keys(p.partners).length}</td>
-        <td>${statusLabel(p.status)}</td>`;
+        <td>${Object.keys(p.partners||{}).length}</td>
+        <td>${statusLabel(p.status||'active')}</td>`;
       body.appendChild(tr);
     }
   }
@@ -1049,7 +1048,6 @@ input,select,button{max-width:100%}
   let timerInterval=null,timerRemaining=(state.timerMinutes||12)*60;
   function renderTimer(){
     const mins=Number($('timerMinutes').value);
-    if(mins===0&&!timerInterval){$('timerDisplay').classList.remove('timer-ended');$('timerDisplay').textContent='Manual';return;}
     const m=Math.floor(timerRemaining/60),s=timerRemaining%60;
     $('timerDisplay').classList.remove('timer-ended');$('timerDisplay').textContent=`${m}:${String(s).padStart(2,'0')}`;
   }
@@ -1078,7 +1076,7 @@ input,select,button{max-width:100%}
   }
 
   function toggleTimer(){
-    const mins=Number($('timerMinutes').value);if(mins===0)return;ensureAudio();
+    const mins=Number($('timerMinutes').value);ensureAudio();
     if(timerInterval){clearInterval(timerInterval);timerInterval=null;$('timerStartBtn').textContent='Resume';return;}
     if(timerRemaining<=0)timerRemaining=mins*60;
     $('timerStartBtn').textContent='Pause';
