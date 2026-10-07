@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <meta name="theme-color" content="#1f7a5c" />
-<title>NextCuatro v4.2.1</title>
+<title>NextCuatro v4.3</title>
 <style>
 
   :root{
@@ -350,7 +350,9 @@ input,select,button{max-width:100%}
   #nextRoundBtn{display:inline-flex;align-items:center;justify-content:center;gap:8px}
   #nextRoundBtn .next-logo{width:24px;height:24px;object-fit:contain;border-radius:5px;flex:0 0 auto}
   .team-pick:hover{background:#f1f4f5}
-  .team-pick.selected{background:var(--accent2);color:var(--accent);outline:2px solid var(--accent);}
+  .team-pick.selected{background:#eef9ef;color:var(--navy);outline:1.5px solid var(--accent);}
+  .team-pick .team-row{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%}
+  .team-pick .winner-label{margin-left:auto;color:var(--navy);font-weight:850;font-size:.78em;letter-spacing:.06em;white-space:nowrap}
   .vs{display:block;width:100%;text-align:left!important;padding-left:5ch!important;box-sizing:border-box;margin-left:0!important;margin-right:0!important}
   .timer-display.timer-ended{font-size:24px;line-height:1.05;min-width:220px;text-align:center;animation:timerFlash .8s ease-in-out infinite alternate;color:#b42318}
   @keyframes timerFlash{from{opacity:1;transform:scale(1)}to{opacity:.42;transform:scale(1.04)}}
@@ -482,7 +484,7 @@ input,select,button{max-width:100%}
     </main>
   </div>
 </div>
-<div class="footer">NextCuatro · v4.2.1 · © 2026 Todd Witte</div>
+<div class="footer">NextCuatro · v4.3 · © 2026 Todd Witte</div>
 
 <script>
 (() => {
@@ -968,7 +970,7 @@ input,select,button{max-width:100%}
       $('roundTitle').textContent='Ready to start';
       $('statsLine').textContent='Add players, choose a mode, then create the first round.';
       $('waitingBox').style.display='none';
-      $('nextRoundBtn').innerHTML=nextButtonHtml('Create Round 1');
+      $('nextRoundBtn').innerHTML=nextButtonHtml('Next Cuatro!');
       return;
     }
     $('emptyState').style.display='none';
@@ -983,9 +985,9 @@ input,select,button{max-width:100%}
       const result=(cr.results||[])[idx]??null;
       card.innerHTML=`
         <h3>COURT ${idx+1}</h3>
-        <button class="team team-pick ${result==='A'?'selected':''}" data-result="A" title="Tap to record this team as winner">${escapeHtml(t1[0])} + ${escapeHtml(t1[1])}</button>
+        <button class="team team-pick ${result==='A'?'selected':''}" data-result="A" title="Tap to record this team as winner"><span class="team-row"><span>${escapeHtml(t1[0])} + ${escapeHtml(t1[1])}</span>${result==='A'?'<span class="winner-label">WINNER</span>':''}</span></button>
         <div class="vs">vs.</div>
-        <button class="team team-pick ${result==='B'?'selected':''}" data-result="B" title="Tap to record this team as winner">${escapeHtml(t2[0])} + ${escapeHtml(t2[1])}</button>`;
+        <button class="team team-pick ${result==='B'?'selected':''}" data-result="B" title="Tap to record this team as winner"><span class="team-row"><span>${escapeHtml(t2[0])} + ${escapeHtml(t2[1])}</span>${result==='B'?'<span class="winner-label">WINNER</span>':''}</span></button>`;
       card.querySelectorAll('[data-result]').forEach(btn=>btn.onclick=()=>recordResult(idx,btn.dataset.result));
       area.appendChild(card);
     });
@@ -993,7 +995,7 @@ input,select,button{max-width:100%}
       $('waitingBox').style.display='block';
       $('waitingBox').innerHTML=`<strong>Sitting this round out:</strong> ${cr.waiting.map(nameById).map(escapeHtml).join(', ')}`;
     } else $('waitingBox').style.display='none';
-    $('nextRoundBtn').innerHTML=nextButtonHtml('Next Cuatro');
+    $('nextRoundBtn').innerHTML=nextButtonHtml('Next Cuatro!');
   }
 
   function renderStats(){
