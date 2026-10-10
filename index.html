@@ -359,7 +359,7 @@ input,select,button{max-width:100%}
   @keyframes timerFlash{from{opacity:1;transform:scale(1)}to{opacity:.42;transform:scale(1.04)}}
 
 
-  /* v5.5 Beta: informational features section only; no rotation logic changes */
+  /* v5.6 Revised Beta: informational features section only; no rotation logic changes */
   .features-panel{max-width:1100px;margin:16px auto 0;padding:0 16px}
   .features-panel details{background:var(--card, #fff);border:1px solid #d8e0e7;border-radius:12px;overflow:hidden}
   .features-panel summary{cursor:pointer;padding:15px 18px;font-weight:750;color:#12345a;list-style-position:inside}
@@ -500,10 +500,10 @@ input,select,button{max-width:100%}
   <details id="featuresHelp">
     <summary>Click here to expand a description of the app's current features</summary>
     <div class="features-content">
-      <p class="feature-version">NextCuatro v5.5 Beta · Flexible. Smart. Adaptive.</p>
+      <p class="feature-version">NextCuatro v5.6 Revised Beta · Flexible. Smart. Adaptive.</p>
       <p>NextCuatro organizes rotating pickleball games as players arrive, take breaks, and leave. Set the available courts, choose a rotation mode, add players, and press <strong>Next Cuatro!</strong> to create the next game.</p>
-      <h3>What’s new in v5.5 Beta</h3>
-      <ul><li>Improved sit-out selection to prioritize players with fewer previous breaks.</li><li>Voluntary sit-outs count toward the same fairness total as assigned breaks.</li><li>Rotation and pairing handling strengthened for changing attendance.</li></ul>
+      <h3>What’s new in v5.6 Revised Beta</h3>
+      <ul><li>Smart Random prioritizes unused partnerships; with nine steady solo players on two courts, all 36 partnerships are used over nine games. Pair fairness prompts can return after another full cycle of solo-player breaks; voluntary breaks count toward sit-out fairness.</li><li>Voluntary sit-outs count toward the same fairness total as assigned breaks.</li><li>Rotation and pairing handling strengthened for changing attendance.</li></ul>
       <h3>Players &amp; availability</h3>
       <ul>
         <li>Add players before or during a session; new players receive priority for their first game when space permits.</li>
@@ -523,7 +523,7 @@ input,select,button{max-width:100%}
       <ul>
         <li>Rotation considers total sit-outs, including voluntary breaks, and consecutive games played. The app avoids repeat assigned breaks while eligible players have fewer sit-outs whenever pairing and court capacity permit.</li>
         <li>Fixed pairs normally play together and, when possible, sit out together.</li>
-        <li>When a one-person break would unfairly favor a fixed pair, the organizer may be asked whether to separate the pair temporarily for two games. Each partner takes one break; declining keeps the pair together. Pairing and unpairing can be changed during a session.</li>
+        <li>When a one-person break would unfairly favor a fixed pair, the organizer may be asked whether to separate the pair temporarily for two games. Each partner takes one break; declining keeps the pair together until the solo players have each taken another break, when the organizer may be asked again. Pairing and unpairing can be changed during a session.</li>
       </ul>
       <h3>Games, results &amp; ratings</h3>
       <ul>
@@ -543,7 +543,7 @@ input,select,button{max-width:100%}
     </div>
   </details>
 </section>
-<div class="footer">NextCuatro · v5.5 Beta · © 2026 Todd Witte</div>
+<div class="footer">NextCuatro · v5.6 Revised Beta · © 2026 Todd Witte</div>
 
 <script>
 (() => {
@@ -646,7 +646,7 @@ input,select,button{max-width:100%}
 
   function setPair(id,partnerId){
     state.temporaryPair=null;
-    state.pairPromptDeclinedIds=[];
+    state.pairPromptDeclinedAt={};
     const p=state.players.find(x=>x.id===id);
     if(!p) return;
     if(p.fixedPartnerId){
@@ -741,22 +741,33 @@ input,select,button{max-width:100%}
 
   function maybeSuggestPairBreak(actives,capacity){
     if(state.temporaryPair?.remaining>0) return;
+    // With exactly one unfilled place, a fixed pair cannot sit together.
     if(actives.length-capacity!==1) return;
     const pairs=makeUnits(actives).filter(u=>u.length===2);
     const solos=actives.filter(p=>!p.fixedPartnerId);
     if(!solos.length) return;
-    // Pair members may have sat earlier in the session before they were paired.
-    // Compare cumulative sit-outs, rather than requiring both counts to be zero.
-    // Offer separation when BOTH members have fewer breaks than EVERY solo.
     const lowestSoloSit=Math.min(...solos.map(p=>p.sat||0));
-    const due=pairs.find(u=>u.every(p=>(p.sat||0)<lowestSoloSit) &&
-      !state.pairPromptDeclinedIds?.includes(u.map(p=>p.id).sort().join(':')));
+    // Declining a prompt is for ONE fairness cycle, not for the entire session.
+    // Ask again only after every currently active solo player has taken
+    // another sit-out (i.e. the minimum solo sit-out count has increased).
+    // A previous version stored permanent declined IDs; deliberately ignore
+    // that legacy setting so users upgrading in place can receive prompts.
+    state.pairPromptDeclinedAt ||= {};
+    const due=pairs.find(u=>{
+      const key=u.map(p=>p.id).sort().join(':');
+      return u.every(p=>(p.sat||0)<lowestSoloSit) &&
+        lowestSoloSit > (state.pairPromptDeclinedAt[key] ?? -1);
+    });
     if(!due) return;
     const [a,b]=due;
     const key=due.map(p=>p.id).sort().join(':');
-    const yes=confirm(`Pair Fairness Suggestion\n\n${a.name} and ${b.name} have had fewer sit-outs than the solo players.\n\nWould you like to temporarily separate this pair for two games, so each player takes a turn sitting out?\n\nOK = Allow Temporary Separation\nCancel = Keep Pair Together`);
-    if(yes) state.temporaryPair={ids:[a.id,b.id],remaining:2};
-    else state.pairPromptDeclinedIds=[...(state.pairPromptDeclinedIds||[]),key];
+    const yes=confirm(`Pair Fairness Suggestion\\n\\n${a.name} and ${b.name} have had fewer sit-outs than the solo players.\\n\\nWould you like to temporarily separate this pair for two games, so each player takes a turn sitting out?\\n\\nOK = Allow Temporary Separation\\nCancel = Keep Pair Together (ask again after the solo players have each sat another time)`);
+    if(yes){
+      state.temporaryPair={ids:[a.id,b.id],remaining:2};
+      delete state.pairPromptDeclinedAt[key];
+    }else{
+      state.pairPromptDeclinedAt[key]=lowestSoloSit;
+    }
   }
 
   function makeUnits(players){
@@ -816,27 +827,91 @@ input,select,button{max-width:100%}
     return {playing:[],waiting:[...players]};
   }
 
+  // Exact minimum-repeat teammate matching for ordinary Smart Random games.
+  // Dynamic programming over 4-player court partitions. This makes repeats
+  // strictly worse than any opponent-history tie-breaker.
   function buildSmart(players){
+    if(players.length>16) return buildSmartFallback(players);
+    const n=players.length, full=(1<<n)-1, memo=new Map();
+    const fixedIndex=players.map(p=>players.findIndex(q=>q.id===effectivePartnerId(p)));
+    function solve(mask){
+      if(!mask) return {cost:0,courts:[]};
+      if(memo.has(mask)) return memo.get(mask);
+      const first=players.findIndex((_,i)=>mask&(1<<i));
+      let best={cost:Infinity,courts:[]};
+      const others=[];
+      for(let i=first+1;i<n;i++)if(mask&(1<<i))others.push(i);
+      for(let a=0;a<others.length;a++)for(let b=a+1;b<others.length;b++)for(let c=b+1;c<others.length;c++){
+        const inds=[first,others[a],others[b],others[c]];
+        if(inds.some(i=>fixedIndex[i]>=0 && !inds.includes(fixedIndex[i])))continue;
+        const group=inds.map(i=>players[i]);
+        const options=teamPairings(group).filter(respectsFixed);
+        for(const opt of options){
+          const repeat=partnerCount(opt[0][0],opt[0][1])+partnerCount(opt[1][0],opt[1][1]);
+          const repeatsAny=(partnerCount(opt[0][0],opt[0][1])>0?1:0)+(partnerCount(opt[1][0],opt[1][1])>0?1:0);
+          let opponents=0;
+          for(const x of opt[0])for(const y of opt[1])opponents+=opponentCount(x,y);
+          const rest=solve(mask^inds.reduce((m,i)=>m|(1<<i),0));
+          const cost=rest.cost+repeatsAny*1000000+repeat*10000+opponents*2+Math.random()*.05;
+          if(cost<best.cost)best={cost,courts:[opt,...rest.courts]};
+        }
+      }
+      memo.set(mask,best);
+      return best;
+    }
+    const result=solve(full);
+    return Number.isFinite(result.cost)?result.courts:buildSmartFallback(players);
+  }
+
+  function buildSmartFallback(players){
     let best=null,bestCost=Infinity;
-    const trials=Math.min(500,80+players.length*15);
-    for(let t=0;t<trials;t++){
-      const arr=shuffle(players), groups=[]; let cost=0, ok=true;
+    for(let t=0;t<600;t++){
+      const arr=shuffle(players),groups=[];let cost=0,ok=true;
       for(let i=0;i<arr.length;i+=4){
         const g=arr.slice(i,i+4);
-        if(g.length<4){ok=false;break;}
-        // fixed partners must land in same group
-        for(const p of g) if(effectivePartnerId(p) && !g.some(x=>x.id===effectivePartnerId(p))){ok=false;break;}
-        if(!ok) break;
-        groups.push(g); cost+=groupRepeatCost(g);
+        if(g.some(p=>effectivePartnerId(p)&&!g.some(x=>x.id===effectivePartnerId(p)))){ok=false;break;}
+        const pairing=bestTeams(g,'smart');
+        if(!pairing){ok=false;break;}
+        cost+=repeatCost(pairing,0.1);groups.push(pairing);
       }
-      cost += Math.random()*3; // preserve random feel among similarly good solutions
-      if(ok && cost<bestCost){best=groups;bestCost=cost;}
+      if(ok&&cost<bestCost){best=groups;bestCost=cost;}
     }
-    if(!best) best=[]; 
-    if(!best.length){
-      const arr=[...players]; for(let i=0;i<arr.length;i+=4) best.push(arr.slice(i,i+4));
+    return best||[];
+  }
+
+  // A complete nine-player, two-court round-robin covers all 36 unique
+  // partnerships over nine games, with exactly one sit-out per person.
+  function ninePlayerSchedule(ids){
+    const order=shuffle([...ids,null]),schedule=[];
+    for(let r=0;r<9;r++){
+      const teams=[];let waiting=null;
+      for(let i=0;i<5;i++){
+        const a=order[i],b=order[9-i];
+        if(a===null||b===null)waiting=a===null?b:a;
+        else teams.push([a,b]);
+      }
+      schedule.push({waiting,courts:[[teams[0],teams[1]],[teams[2],teams[3]]]});
+      order.splice(1,0,order.pop());
     }
-    return best.map(g=>bestTeams(g,'smart'));
+    return schedule;
+  }
+
+  function getNinePlayerRound(actives){
+    const ids=actives.map(p=>p.id).sort(),signature=ids.join('|');
+    let plan=state.smartNinePlan;
+    if(!plan||plan.signature!==signature||plan.next>=9){
+      // Only begin a new complete cycle when prior pair histories permit it.
+      const noHistory=actives.every(p=>ids.every(id=>id===p.id||!(p.partners?.[id])));
+      if(!noHistory)return null;
+      plan={signature,next:0,rounds:ninePlayerSchedule(ids)};
+      state.smartNinePlan=plan;
+    }
+    const item=plan.rounds[plan.next++];
+    return {
+      playing:item.courts.flat(2).map(id=>state.players.find(p=>p.id===id)),
+      waiting:[state.players.find(p=>p.id===item.waiting)],
+      courts:item.courts.map(c=>c.map(t=>t.map(id=>state.players.find(p=>p.id===id))))
+    };
   }
 
   function buildSimilar(players){
@@ -953,7 +1028,9 @@ input,select,button{max-width:100%}
       forcedSitter=actives.find(p=>p.id===state.temporaryPair.ids[index])||null;
     }
     const eligible=forcedSitter?actives.filter(p=>p.id!==forcedSitter.id):actives;
-    const selected=chooseParticipants(eligible,capacity,state.mode);
+    const scheduled=(state.mode==='smart' && actives.length===9 && capacity===8 &&
+      !voluntarySitters.length && !actives.some(p=>p.fixedPartnerId)) ? getNinePlayerRound(actives) : null;
+    const selected=scheduled||chooseParticipants(eligible,capacity,state.mode);
     const playing=selected.playing, waiting=[...selected.waiting,...(forcedSitter?[forcedSitter]:[])];
     if(playing.length!==capacity){
       alert('Cannot fill all courts while keeping fixed pairs together. Please adjust courts or pairings.');
@@ -964,7 +1041,8 @@ input,select,button{max-width:100%}
     const displayWaiting=[...waiting,...voluntarySitters];
 
     let courts;
-    if(state.mode==='similar') courts=buildSimilar(playing);
+    if(scheduled) courts=scheduled.courts;
+    else if(state.mode==='similar') courts=buildSimilar(playing);
     else if(state.mode==='balanced') courts=buildBalanced(playing);
     else courts=buildSmart(playing);
 
