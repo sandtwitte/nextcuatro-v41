@@ -359,7 +359,7 @@ input,select,button{max-width:100%}
   @keyframes timerFlash{from{opacity:1;transform:scale(1)}to{opacity:.42;transform:scale(1.04)}}
 
 
-  /* v5.2: informational features section only; no rotation logic changes */
+  /* v5.5 Beta: informational features section only; no rotation logic changes */
   .features-panel{max-width:1100px;margin:16px auto 0;padding:0 16px}
   .features-panel details{background:var(--card, #fff);border:1px solid #d8e0e7;border-radius:12px;overflow:hidden}
   .features-panel summary{cursor:pointer;padding:15px 18px;font-weight:750;color:#12345a;list-style-position:inside}
@@ -500,8 +500,10 @@ input,select,button{max-width:100%}
   <details id="featuresHelp">
     <summary>Click here to expand a description of the app's current features</summary>
     <div class="features-content">
-      <p class="feature-version">NextCuatro v5.2 · Flexible. Smart. Adaptive.</p>
+      <p class="feature-version">NextCuatro v5.5 Beta · Flexible. Smart. Adaptive.</p>
       <p>NextCuatro organizes rotating pickleball games as players arrive, take breaks, and leave. Set the available courts, choose a rotation mode, add players, and press <strong>Next Cuatro!</strong> to create the next game.</p>
+      <h3>What’s new in v5.5 Beta</h3>
+      <ul><li>Improved sit-out selection to prioritize players with fewer previous breaks.</li><li>Voluntary sit-outs count toward the same fairness total as assigned breaks.</li><li>Rotation and pairing handling strengthened for changing attendance.</li></ul>
       <h3>Players &amp; availability</h3>
       <ul>
         <li>Add players before or during a session; new players receive priority for their first game when space permits.</li>
@@ -519,9 +521,9 @@ input,select,button{max-width:100%}
       </ul>
       <h3>Fairness &amp; fixed pairs</h3>
       <ul>
-        <li>Rotation considers previous sit-outs and consecutive games played.</li>
+        <li>Rotation considers total sit-outs, including voluntary breaks, and consecutive games played. The app avoids repeat assigned breaks while eligible players have fewer sit-outs whenever pairing and court capacity permit.</li>
         <li>Fixed pairs normally play together and, when possible, sit out together.</li>
-        <li>When a one-person break would unfairly favor a fixed pair, the organizer may be asked whether to separate the pair temporarily for two games. Declining keeps the pair together.</li>
+        <li>When a one-person break would unfairly favor a fixed pair, the organizer may be asked whether to separate the pair temporarily for two games. Each partner takes one break; declining keeps the pair together. Pairing and unpairing can be changed during a session.</li>
       </ul>
       <h3>Games, results &amp; ratings</h3>
       <ul>
@@ -541,7 +543,7 @@ input,select,button{max-width:100%}
     </div>
   </details>
 </section>
-<div class="footer">NextCuatro · v5.2 · © 2026 Todd Witte</div>
+<div class="footer">NextCuatro · v5.5 Beta · © 2026 Todd Witte</div>
 
 <script>
 (() => {
@@ -623,6 +625,7 @@ input,select,button{max-width:100%}
     const p = state.players.find(x=>x.id===id);
     if(!p) return;
     p.status = status;
+    if(status!=='active' && state.temporaryPair?.ids.includes(id)) state.temporaryPair=null;
     if(status!=='active') p.sitNext=false;
     save(); render();
   }
@@ -632,6 +635,7 @@ input,select,button{max-width:100%}
     if(!p) return;
     const next=!p.sitNext;
     p.sitNext=next;
+    if(next && state.temporaryPair?.ids.includes(id)) state.temporaryPair=null;
     // A fixed pair is a team in every mode; voluntary Sit Out applies to both.
     if(p.fixedPartnerId){
       const q=state.players.find(x=>x.id===p.fixedPartnerId);
@@ -641,6 +645,8 @@ input,select,button{max-width:100%}
   }
 
   function setPair(id,partnerId){
+    state.temporaryPair=null;
+    state.pairPromptDeclinedIds=[];
     const p=state.players.find(x=>x.id===id);
     if(!p) return;
     if(p.fixedPartnerId){
@@ -701,7 +707,8 @@ input,select,button{max-width:100%}
   }
   function bestTeams(group, mode){
     const valid=teamPairings(group).filter(respectsFixed);
-    const options=valid.length?valid:teamPairings(group);
+    const options=valid.length?valid:[];
+    if(!options.length) return null;
     let best=options[0], bestCost=Infinity;
     for(const opt of options){
       let cost=repeatCost(opt,.4);
@@ -733,17 +740,23 @@ input,select,button{max-width:100%}
   }
 
   function maybeSuggestPairBreak(actives,capacity){
-    if(state.temporaryPair?.remaining>0 || state.pairPromptDeclined) return;
+    if(state.temporaryPair?.remaining>0) return;
     if(actives.length-capacity!==1) return;
-    const solos=actives.filter(p=>!p.fixedPartnerId);
-    if(!solos.length || solos.some(p=>p.sat<1)) return;
     const pairs=makeUnits(actives).filter(u=>u.length===2);
-    const due=pairs.find(u=>u.every(p=>p.sat===0));
+    const solos=actives.filter(p=>!p.fixedPartnerId);
+    if(!solos.length) return;
+    // Pair members may have sat earlier in the session before they were paired.
+    // Compare cumulative sit-outs, rather than requiring both counts to be zero.
+    // Offer separation when BOTH members have fewer breaks than EVERY solo.
+    const lowestSoloSit=Math.min(...solos.map(p=>p.sat||0));
+    const due=pairs.find(u=>u.every(p=>(p.sat||0)<lowestSoloSit) &&
+      !state.pairPromptDeclinedIds?.includes(u.map(p=>p.id).sort().join(':')));
     if(!due) return;
     const [a,b]=due;
-    const yes=confirm(`Pair Fairness Suggestion\\n\\n${a.name} and ${b.name} have not sat out, while the solo players have.\\n\\nTemporarily allow separate play for two games, with one partner sitting each game? Their fixed pairing will be restored automatically.\\n\\nOK = Allow temporary separation\\nCancel = Keep pair together`);
+    const key=due.map(p=>p.id).sort().join(':');
+    const yes=confirm(`Pair Fairness Suggestion\n\n${a.name} and ${b.name} have had fewer sit-outs than the solo players.\n\nWould you like to temporarily separate this pair for two games, so each player takes a turn sitting out?\n\nOK = Allow Temporary Separation\nCancel = Keep Pair Together`);
     if(yes) state.temporaryPair={ids:[a.id,b.id],remaining:2};
-    else state.pairPromptDeclined=true;
+    else state.pairPromptDeclinedIds=[...(state.pairPromptDeclinedIds||[]),key];
   }
 
   function makeUnits(players){
@@ -759,41 +772,48 @@ input,select,button{max-width:100%}
   }
 
   function sitScore(p){
-    // Lower score = more eligible to sit. Strongly protect anyone who has
-    // already sat more often, sat last round, or just joined the session.
-    const recent = state.round-p.lastSatRound<=1 ? 5000 : 0;
-    const newcomer = p.played===0 ? 120000 : 0;
-    return p.sat*1500 + recent + newcomer - (p.playStreak||0)*900 + Math.random()*6;
+    // Tie-breaker ONLY. Sit-out count is compared first as a hard priority.
+    const recent = state.round-p.lastSatRound<=1 ? 100000 : 0;
+    const newcomer = p.played===0 ? 1000000 : 0;
+    return recent + newcomer - (p.playStreak||0)*100 + Math.random();
   }
 
-  function chooseParticipants(players, capacity, mode){
+  function chooseParticipants(players,capacity,mode){
     if(players.length<=capacity) return {playing:[...players],waiting:[]};
     const units=makeUnits(players);
-    let best=null,bestCost=Infinity;
-    // Choose whole fixed-pair units whenever an exact-capacity solution exists.
-    for(let t=0;t<900;t++){
-      const order=shuffle(units), waiting=[], playing=[]; let slots=capacity;
-      for(const u of order){
-        if(u.length<=slots){playing.push(...u);slots-=u.length;} else waiting.push(...u);
+    let best=null,bestKey=null,visited=0;
+    // Enumerate valid court/sit-out combinations, never silently split pairs.
+    // The first key is the highest number of sit-outs assigned to anyone;
+    // this strictly precedes streak or randomness as a fairness criterion.
+    const suffix=Array(units.length+1).fill(0);
+    for(let i=units.length-1;i>=0;i--)suffix[i]=suffix[i+1]+units[i].length;
+    function evaluate(playing,waiting){
+      const counts=waiting.map(p=>p.sat||0).sort((a,b)=>b-a);
+      const key=[...counts,waiting.reduce((sum,p)=>sum+sitScore(p),0)];
+      if(!bestKey || key.some((v,i)=>v!==bestKey[i] && key.slice(0,i).every((x,j)=>x===bestKey[j]) && v<bestKey[i])){
+        best={playing:[...playing],waiting:[...waiting]};bestKey=key;
       }
-      if(playing.length!==capacity) continue;
-      let cost=waiting.reduce((sum,p)=>sum+sitScore(p),0);
-      // Similar Skill still prioritizes global sit fairness, with a small preference
-      // for a playing pool that can form close-skill courts.
-      if(mode==='similar'){
-        const r=[...playing].sort((a,b)=>rating(b)-rating(a));
-        for(let i=0;i<r.length;i+=4){const g=r.slice(i,i+4);if(g.length===4)cost+=(rating(g[0])-rating(g[3]))*18;}
-      }
-      if(cost<bestCost){best={playing,waiting};bestCost=cost;}
     }
-    if(best) return best;
-
-    // Rare fallback: if pair sizes make exact court capacity impossible, allow one
-    // member of a fixed pair to sit. This is the only circumstance that splits a pair.
-    const sorted=[...players].sort((a,b)=>sitScore(a)-sitScore(b));
-    const waitCount=players.length-capacity;
-    const waiting=sorted.slice(0,waitCount), wids=new Set(waiting.map(p=>p.id));
-    return {playing:players.filter(p=>!wids.has(p.id)),waiting};
+    function search(i,playing,waiting){
+      if(++visited>250000)return;
+      if(playing.length>capacity||playing.length+suffix[i]<capacity)return;
+      if(i===units.length){if(playing.length===capacity)evaluate(playing,waiting);return;}
+      const u=units[i];
+      if(playing.length+u.length<=capacity)search(i+1,[...playing,...u],waiting);
+      search(i+1,playing,[...waiting,...u]);
+    }
+    if(units.length<=21)search(0,[],[]);
+    if(best)return best;
+    // For exceptionally large sessions, sample combinations without
+    // compromising fixed pairs or the fairness ordering.
+    for(let t=0;t<6000;t++){
+      const order=shuffle(units),playing=[],waiting=[];
+      for(const u of order){if(playing.length+u.length<=capacity)playing.push(...u);else waiting.push(...u);}
+      if(playing.length===capacity)evaluate(playing,waiting);
+    }
+    if(best)return best;
+    // Impossible to fill the configured courts while preserving pairs.
+    return {playing:[],waiting:[...players]};
   }
 
   function buildSmart(players){
@@ -838,7 +858,7 @@ input,select,button{max-width:100%}
         const rs=g.map(rating);
         cost+=(Math.max(...rs)-Math.min(...rs))*45 + groupRepeatCost(g)*.6;
         const pairing=bestTeams(g,'similar');
-        if(!respectsFixed(pairing)){ok=false;break;}
+        if(!pairing || !respectsFixed(pairing)){ok=false;break;}
         pairings.push(pairing);
       }
       if(ok&&cost<bestCost){best=pairings;bestCost=cost;}
@@ -864,6 +884,7 @@ input,select,button{max-width:100%}
         for(const p of g) if(effectivePartnerId(p) && !g.some(x=>x.id===effectivePartnerId(p))){ok=false;break;}
         if(!ok) break;
         const pairing=bestTeams(g,'balanced');
+        if(!pairing){ok=false;break;}
         const diff=teamBalanceCost(pairing);
         cost += diff<=.25 ? diff*2 : diff<=.5 ? 2+diff*8 : 30+diff*30;
         cost += repeatCost(pairing,.5);
@@ -934,6 +955,10 @@ input,select,button{max-width:100%}
     const eligible=forcedSitter?actives.filter(p=>p.id!==forcedSitter.id):actives;
     const selected=chooseParticipants(eligible,capacity,state.mode);
     const playing=selected.playing, waiting=[...selected.waiting,...(forcedSitter?[forcedSitter]:[])];
+    if(playing.length!==capacity){
+      alert('Cannot fill all courts while keeping fixed pairs together. Please adjust courts or pairings.');
+      return;
+    }
     // Voluntary one-round sitters are displayed with everyone sitting this round,
     // but they do not count as algorithm-assigned fairness sit-outs.
     const displayWaiting=[...waiting,...voluntarySitters];
@@ -943,6 +968,10 @@ input,select,button{max-width:100%}
     else if(state.mode==='balanced') courts=buildBalanced(playing);
     else courts=buildSmart(playing);
 
+    if(courts.length!==fullCourts || courts.some(c=>!c || c.length!==2 || c.some(t=>!t || t.length!==2))){
+      alert('Unable to form valid teams with the current pairings. Try adjusting pairings or court count.');
+      return;
+    }
     state.round += 1;
 
     // "Sit Out" lasts exactly one round. It counts as a real sit for fairness,
