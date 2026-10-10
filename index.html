@@ -359,7 +359,7 @@ input,select,button{max-width:100%}
   @keyframes timerFlash{from{opacity:1;transform:scale(1)}to{opacity:.42;transform:scale(1.04)}}
 
 
-  /* v5.6 Revised Beta: informational features section only; no rotation logic changes */
+  /* v5.7 Beta: informational features section only; no rotation logic changes */
   .features-panel{max-width:1100px;margin:16px auto 0;padding:0 16px}
   .features-panel details{background:var(--card, #fff);border:1px solid #d8e0e7;border-radius:12px;overflow:hidden}
   .features-panel summary{cursor:pointer;padding:15px 18px;font-weight:750;color:#12345a;list-style-position:inside}
@@ -369,6 +369,15 @@ input,select,button{max-width:100%}
   .features-content ul{margin:0 0 8px;padding-left:22px}
   .features-content li{margin:3px 0}
   .features-content .feature-version{font-size:12px;color:#566777}
+
+  .nc-modal-backdrop[hidden]{display:none!important}
+  .nc-modal-backdrop{position:fixed;inset:0;z-index:99999;background:rgba(10,25,45,.65);display:flex;align-items:center;justify-content:center;padding:20px}
+  .nc-modal{background:#fff;color:#1b344f;border-radius:16px;padding:24px;width:min(100%,460px);box-shadow:0 15px 45px rgba(0,0,0,.28);line-height:1.5}
+  .nc-modal h2{font-size:21px;color:#12345a;margin:0 0 14px}
+  .nc-modal p{margin:0 0 14px}
+  .nc-modal-actions{display:flex;flex-direction:column;gap:10px;margin:20px 0 12px}
+  .nc-modal-actions button{width:100%;min-height:44px;white-space:normal}
+  .nc-modal-footnote{font-size:12px;color:#5b6875;margin-bottom:0!important}
 </style>
 </head>
 <body>
@@ -500,10 +509,10 @@ input,select,button{max-width:100%}
   <details id="featuresHelp">
     <summary>Click here to expand a description of the app's current features</summary>
     <div class="features-content">
-      <p class="feature-version">NextCuatro v5.6 Revised Beta · Flexible. Smart. Adaptive.</p>
+      <p class="feature-version">NextCuatro v5.7 Beta · Flexible. Smart. Adaptive.</p>
       <p>NextCuatro organizes rotating pickleball games as players arrive, take breaks, and leave. Set the available courts, choose a rotation mode, add players, and press <strong>Next Cuatro!</strong> to create the next game.</p>
-      <h3>What’s new in v5.6 Revised Beta</h3>
-      <ul><li>Smart Random prioritizes unused partnerships; with nine steady solo players on two courts, all 36 partnerships are used over nine games. Pair fairness prompts can return after another full cycle of solo-player breaks; voluntary breaks count toward sit-out fairness.</li><li>Voluntary sit-outs count toward the same fairness total as assigned breaks.</li><li>Rotation and pairing handling strengthened for changing attendance.</li></ul>
+      <h3>What’s new in v5.7 Beta</h3>
+      <ul><li>Clear, custom pair-fairness dialog with Yes/No buttons; after a pair accepts one break each, no catch-up prompts until all active solo players have sat out another time.</li><li>Voluntary sit-outs count toward the same fairness total as assigned breaks.</li><li>Rotation and pairing handling strengthened for changing attendance.</li></ul>
       <h3>Players &amp; availability</h3>
       <ul>
         <li>Add players before or during a session; new players receive priority for their first game when space permits.</li>
@@ -523,7 +532,7 @@ input,select,button{max-width:100%}
       <ul>
         <li>Rotation considers total sit-outs, including voluntary breaks, and consecutive games played. The app avoids repeat assigned breaks while eligible players have fewer sit-outs whenever pairing and court capacity permit.</li>
         <li>Fixed pairs normally play together and, when possible, sit out together.</li>
-        <li>When a one-person break would unfairly favor a fixed pair, the organizer may be asked whether to separate the pair temporarily for two games. Each partner takes one break; declining keeps the pair together until the solo players have each taken another break, when the organizer may be asked again. Pairing and unpairing can be changed during a session.</li>
+        <li>When a one-person break would unfairly favor a fixed pair, the organizer may be asked whether to separate the pair temporarily for two games. Each partner takes one actual break; after either declining or completing an approved two-game separation, the organizer is not asked again until every active solo player has taken another break. Actual sit-out totals are always preserved, even when a pair declines several times. Pairing and unpairing can be changed during a session.</li>
       </ul>
       <h3>Games, results &amp; ratings</h3>
       <ul>
@@ -543,7 +552,20 @@ input,select,button{max-width:100%}
     </div>
   </details>
 </section>
-<div class="footer">NextCuatro · v5.6 Revised Beta · © 2026 Todd Witte</div>
+<div class="footer">NextCuatro · v5.7 Beta · © 2026 Todd Witte</div>
+
+<div class="nc-modal-backdrop" id="pairFairnessModal" hidden>
+  <section class="nc-modal" role="dialog" aria-modal="true" aria-labelledby="pairFairnessTitle" aria-describedby="pairFairnessDescription">
+    <h2 id="pairFairnessTitle">Pair Fairness Suggestion</h2>
+    <p id="pairFairnessDescription"></p>
+    <p>Each player will sit out once, and they'll automatically be paired together again afterward.</p>
+    <div class="nc-modal-actions">
+      <button class="primary" id="pairFairnessYes">Yes — Separate for 2 games</button>
+      <button class="secondary" id="pairFairnessNo">No — Keep playing together</button>
+    </div>
+    <p class="nc-modal-footnote">If you choose No, we'll ask again after the other players have each taken another break.</p>
+  </section>
+</div>
 
 <script>
 (() => {
@@ -739,35 +761,43 @@ input,select,button{max-width:100%}
     return p.fixedPartnerId;
   }
 
+  // Pair fairness uses actual sit-outs for statistics, but a separate
+  // cycle watermark for invitations. Declining/accepting never causes
+  // a backlog of catch-up invitations.
+  let pairPromptPending=false;
   function maybeSuggestPairBreak(actives,capacity){
-    if(state.temporaryPair?.remaining>0) return;
-    // With exactly one unfilled place, a fixed pair cannot sit together.
-    if(actives.length-capacity!==1) return;
+    if(pairPromptPending || state.temporaryPair?.remaining>0) return false;
+    if(actives.length-capacity!==1) return false;
     const pairs=makeUnits(actives).filter(u=>u.length===2);
     const solos=actives.filter(p=>!p.fixedPartnerId);
-    if(!solos.length) return;
+    if(!solos.length) return false;
     const lowestSoloSit=Math.min(...solos.map(p=>p.sat||0));
-    // Declining a prompt is for ONE fairness cycle, not for the entire session.
-    // Ask again only after every currently active solo player has taken
-    // another sit-out (i.e. the minimum solo sit-out count has increased).
-    // A previous version stored permanent declined IDs; deliberately ignore
-    // that legacy setting so users upgrading in place can receive prompts.
     state.pairPromptDeclinedAt ||= {};
     const due=pairs.find(u=>{
       const key=u.map(p=>p.id).sort().join(':');
-      return u.every(p=>(p.sat||0)<lowestSoloSit) &&
-        lowestSoloSit > (state.pairPromptDeclinedAt[key] ?? -1);
+      const lastOpportunity=state.pairPromptDeclinedAt[key] ?? -1;
+      return u.every(p=>(p.sat||0)<lowestSoloSit) && lowestSoloSit>lastOpportunity;
     });
-    if(!due) return;
-    const [a,b]=due;
-    const key=due.map(p=>p.id).sort().join(':');
-    const yes=confirm(`Pair Fairness Suggestion\\n\\n${a.name} and ${b.name} have had fewer sit-outs than the solo players.\\n\\nWould you like to temporarily separate this pair for two games, so each player takes a turn sitting out?\\n\\nOK = Allow Temporary Separation\\nCancel = Keep Pair Together (ask again after the solo players have each sat another time)`);
-    if(yes){
-      state.temporaryPair={ids:[a.id,b.id],remaining:2};
-      delete state.pairPromptDeclinedAt[key];
-    }else{
+    if(!due) return false;
+    const [a,b]=due, key=due.map(p=>p.id).sort().join(':');
+    pairPromptPending=true;
+    const modal=$('pairFairnessModal');
+    $('pairFairnessDescription').textContent=`${a.name} and ${b.name} are due for a break. To keep sit-outs fair, would you like to temporarily separate them for the next two games?`;
+    modal.hidden=false;
+    const finish=approved=>{
+      modal.hidden=true;
+      pairPromptPending=false;
+      // Store the current solo-cycle threshold in BOTH cases.
+      // On acceptance this prevents immediate catch-up prompts.
       state.pairPromptDeclinedAt[key]=lowestSoloSit;
-    }
+      if(approved) state.temporaryPair={ids:[a.id,b.id],remaining:2};
+      save();
+      makeRound(true);
+    };
+    $('pairFairnessYes').onclick=()=>finish(true);
+    $('pairFairnessNo').onclick=()=>finish(false);
+    $('pairFairnessYes').focus();
+    return true;
   }
 
   function makeUnits(players){
@@ -882,14 +912,12 @@ input,select,button{max-width:100%}
   // A complete nine-player, two-court round-robin covers all 36 unique
   // partnerships over nine games, with exactly one sit-out per person.
   function ninePlayerSchedule(ids){
-    const order=shuffle([...ids,null]),schedule=[];
+    const order=shuffle(ids),schedule=[];
     for(let r=0;r<9;r++){
-      const teams=[];let waiting=null;
-      for(let i=0;i<5;i++){
-        const a=order[i],b=order[9-i];
-        if(a===null||b===null)waiting=a===null?b:a;
-        else teams.push([a,b]);
-      }
+      const circle=[...order.slice(0,1),...order.slice(1)];
+      const teams=[];
+      for(let i=0;i<4;i++)teams.push([circle[i],circle[7-i]]);
+      const waiting=circle[8];
       schedule.push({waiting,courts:[[teams[0],teams[1]],[teams[2],teams[3]]]});
       order.splice(1,0,order.pop());
     }
@@ -1003,7 +1031,7 @@ input,select,button{max-width:100%}
     cr.adaptiveApplied=true;
   }
 
-  function makeRound(){
+  function makeRound(skipPairPrompt=false){
     if(state.currentRound){
       finalizeAdaptiveResults();
       finalizeLeavers();
@@ -1021,16 +1049,14 @@ input,select,button{max-width:100%}
     }
     const fullCourts=Math.min(state.courts, Math.floor(actives.length/4));
     const capacity=fullCourts*4;
-    maybeSuggestPairBreak(actives,capacity);
+    if(!skipPairPrompt && maybeSuggestPairBreak(actives,capacity)) return;
     let forcedSitter=null;
     if(state.temporaryPair?.remaining>0){
       const index=2-state.temporaryPair.remaining;
       forcedSitter=actives.find(p=>p.id===state.temporaryPair.ids[index])||null;
     }
     const eligible=forcedSitter?actives.filter(p=>p.id!==forcedSitter.id):actives;
-    const scheduled=(state.mode==='smart' && actives.length===9 && capacity===8 &&
-      !voluntarySitters.length && !actives.some(p=>p.fixedPartnerId)) ? getNinePlayerRound(actives) : null;
-    const selected=scheduled||chooseParticipants(eligible,capacity,state.mode);
+    const selected=chooseParticipants(eligible,capacity,state.mode);
     const playing=selected.playing, waiting=[...selected.waiting,...(forcedSitter?[forcedSitter]:[])];
     if(playing.length!==capacity){
       alert('Cannot fill all courts while keeping fixed pairs together. Please adjust courts or pairings.');
@@ -1041,8 +1067,7 @@ input,select,button{max-width:100%}
     const displayWaiting=[...waiting,...voluntarySitters];
 
     let courts;
-    if(scheduled) courts=scheduled.courts;
-    else if(state.mode==='similar') courts=buildSimilar(playing);
+    if(state.mode==='similar') courts=buildSimilar(playing);
     else if(state.mode==='balanced') courts=buildBalanced(playing);
     else courts=buildSmart(playing);
 
