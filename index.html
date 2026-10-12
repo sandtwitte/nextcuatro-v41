@@ -359,7 +359,7 @@ input,select,button{max-width:100%}
   @keyframes timerFlash{from{opacity:1;transform:scale(1)}to{opacity:.42;transform:scale(1.04)}}
 
 
-  /* v5.8 Beta: informational features section only; no rotation logic changes */
+  /* v5.12 Beta: current features and release notes */
   .features-panel{max-width:1100px;margin:16px auto 0;padding:0 16px}
   .features-panel details{background:var(--card, #fff);border:1px solid #d8e0e7;border-radius:12px;overflow:hidden}
   .features-panel summary{cursor:pointer;padding:15px 18px;font-weight:750;color:#12345a;list-style-position:inside}
@@ -404,7 +404,7 @@ input,select,button{max-width:100%}
       </div>
       <div class="setup-row">
         <div>
-          <input id="courtCount" type="number" min="1" max="20" value="4">
+          <input id="courtCount" type="number" min="1" max="8" value="4">
         </div>
         <div style="display:none">
           <label>Court availability</label>
@@ -509,9 +509,10 @@ input,select,button{max-width:100%}
   <details id="featuresHelp">
     <summary>Click here to expand a description of the app's current features</summary>
     <div class="features-content">
-      <p class="feature-version">NextCuatro v5.8 Beta · Flexible. Smart. Adaptive.</p>
+      <p class="feature-version">NextCuatro v5.12 Beta · Flexible. Smart. Adaptive.</p>
       <p>NextCuatro organizes rotating pickleball games as players arrive, take breaks, and leave. Set the available courts, choose a rotation mode, add players, and press <strong>Next Cuatro!</strong> to create the next game.</p>
-      <h3>What’s new in v5.8 Beta</h3>
+      <h3>What’s new in v5.12 Beta</h3>
+      <p>Replaced the 50-player registration hard stop with a one-time advisory when the 51st active player joins or is restored. More than 50 active players are permitted, but performance and fairness above 50 have not been fully tested. The prior fixed-pair scheduling correction remains in place.</p><p>Previously fixed a changing-attendance edge case: if all courts are full, an approved temporary pair separation waits until a sit-out spot opens. Pair integrity, existing rotation capacity, and actual sit-out totals are preserved. Includes support for up to 8 courts and stress-tested scheduling with up to 50 active players.</p>
       <ul><li>Late arrivals get first-game priority and an arrival-adjusted scheduling baseline; actual sit-out totals remain unchanged.</li><li>Clear, custom pair-fairness dialog with Yes/No buttons; after a pair accepts one break each, no catch-up prompts until all active solo players have sat out another time.</li><li>Voluntary sit-outs count toward the same fairness total as assigned breaks.</li><li>Rotation and pairing handling strengthened for changing attendance.</li></ul>
       <h3>Players &amp; availability</h3>
       <ul>
@@ -519,7 +520,7 @@ input,select,button{max-width:100%}
         <li>Choose a self-reported skill level, or leave a player Unrated.</li>
         <li>Pair two players who want to play together, or unpair them.</li>
         <li>Use Sit Out for a one-game break, or Leave when someone is done for the session.</li>
-        <li>See the number of active players at a glance.</li>
+        <li>See the number of active players at a glance. NextCuatro has been tested with up to 50 active players; additional players are allowed after a one-time warning, but larger sessions are not yet validated.</li>
       </ul>
       <h3>Rotation modes</h3>
       <ul>
@@ -552,7 +553,7 @@ input,select,button{max-width:100%}
     </div>
   </details>
 </section>
-<div class="footer">NextCuatro · v5.8 Beta · © 2026 Todd Witte</div>
+<div class="footer">NextCuatro · v5.12 Beta · © 2026 Todd Witte</div>
 
 <script>
 (() => {
@@ -607,6 +608,18 @@ input,select,button{max-width:100%}
     return sorted.length%2 ? sorted[mid] : (sorted[mid-1]+sorted[mid])/2;
   }
 
+  // Capacity advisory, not a registration limit. Warn once per session when
+  // the active roster first grows beyond the range exercised in stress tests.
+  const TESTED_ACTIVE_PLAYERS=50;
+  function activeRosterCount(){
+    return state.players.filter(p=>p.status==='active'||p.status==='leaving').length;
+  }
+  function warnIfBeyondTestedRange(){
+    if(activeRosterCount()<=TESTED_ACTIVE_PLAYERS || state.over50WarningShown) return;
+    state.over50WarningShown=true;
+    alert('NextCuatro has been tested with up to 50 active players. You can continue adding players, but larger groups have not been fully tested and rotations may be slower or behave unexpectedly.');
+  }
+
   function addPlayer(){
     const raw = $('playerName').value.trim().replace(/\s+/g,' ');
     if(!raw) return;
@@ -627,6 +640,7 @@ input,select,button{max-width:100%}
     });
     $('playerName').value='';
     $('playerSkill').value='';
+    warnIfBeyondTestedRange();
     save(); render();
   }
 
@@ -644,12 +658,15 @@ input,select,button{max-width:100%}
   function setStatus(id,status){
     const p = state.players.find(x=>x.id===id);
     if(!p) return;
+    if(!p) return;
     if(status==='active' && p.status!=='active' && p.status!=='leaving'){
       // Rejoining starts a fresh scheduling opportunity, not a statistics reset.
       p.fairnessOffset=arrivalBaseline(id)-(p.sat||0);
       p.firstGamePriority=true;
     }
     p.status = status;
+    if(status==='active') warnIfBeyondTestedRange();
+    if(status==='active') $('duplicateNotice').style.display='none';
     if(status!=='active' && state.temporaryPair?.ids.includes(id)) state.temporaryPair=null;
     if(status!=='active') p.sitNext=false;
     save(); render();
@@ -694,7 +711,7 @@ input,select,button{max-width:100%}
 
   function restorePlayer(id){
     const p = state.players.find(x=>x.id===id);
-    if(p){ p.status='active'; p.sitNext=false; save(); render(); }
+    if(p){ setStatus(id,'active'); p.sitNext=false; save(); render(); }
   }
 
   function incrementMap(obj,key){ obj[key]=(obj[key]||0)+1; }
@@ -758,7 +775,9 @@ input,select,button{max-width:100%}
   }
 
   // A fixed team may be temporarily separated, only with organizer approval.
+  let pairSeparationPaused=false;
   function effectivePartnerId(p){
+    if(pairSeparationPaused) return p.fixedPartnerId;
     const t=state.temporaryPair;
     if(t && t.remaining>0 && t.ids.includes(p.id)) return null;
     return p.fixedPartnerId;
@@ -774,12 +793,12 @@ input,select,button{max-width:100%}
     const pairs=makeUnits(actives).filter(u=>u.length===2);
     const solos=actives.filter(p=>!p.fixedPartnerId);
     if(!solos.length) return false;
-    const lowestSoloSit=Math.min(...solos.map(p=>p.sat||0));
+    const lowestSoloSit=Math.min(...solos.map(schedulingSit));
     state.pairPromptDeclinedAt ||= {};
     const due=pairs.find(u=>{
       const key=u.map(p=>p.id).sort().join(':');
       const lastOpportunity=state.pairPromptDeclinedAt[key] ?? -1;
-      return u.every(p=>(p.sat||0)<lowestSoloSit) && lowestSoloSit>lastOpportunity;
+      return u.every(p=>schedulingSit(p)<lowestSoloSit-0.00001) && lowestSoloSit>lastOpportunity+0.00001;
     });
     if(!due) return false;
     const [a,b]=due, key=due.map(p=>p.id).sort().join(':');
@@ -822,52 +841,38 @@ input,select,button{max-width:100%}
     return recent + newcomer - (p.playStreak||0)*100 + Math.random();
   }
 
+  // Bounded dynamic programming: select complete fixed-pair units to sit.
+  // Runtime grows with player count * number of sit-out slots, not combinations.
   function chooseParticipants(players,capacity,mode){
-    if(players.length<=capacity) return {playing:[...players],waiting:[]};
-    const units=makeUnits(players);
-    let best=null,bestKey=null,visited=0;
-    // Enumerate valid court/sit-out combinations, never silently split pairs.
-    // The first key is the highest number of sit-outs assigned to anyone;
-    // this strictly precedes streak or randomness as a fairness criterion.
-    const suffix=Array(units.length+1).fill(0);
-    for(let i=units.length-1;i>=0;i--)suffix[i]=suffix[i+1]+units[i].length;
-    function evaluate(playing,waiting){
-      // First-game protection is stronger than cumulative scheduling fairness.
-      // If arrivals exceed court capacity, rotate their first opportunities.
-      const missedFirst=waiting.filter(p=>p.firstGamePriority).length;
-      const counts=waiting.map(schedulingSit).sort((a,b)=>b-a);
-      const key=[missedFirst,...counts,waiting.reduce((sum,p)=>sum+sitScore(p),0)];
-      if(!bestKey || key.some((v,i)=>v!==bestKey[i] && key.slice(0,i).every((x,j)=>x===bestKey[j]) && v<bestKey[i])){
-        best={playing:[...playing],waiting:[...waiting]};bestKey=key;
+    if(players.length<=capacity)return {playing:[...players],waiting:[]};
+    const units=makeUnits(players),need=players.length-capacity;
+    // Lower scheduling sit-out totals sit first; first-game newcomers play first.
+    // Lexicographic fairness is approximated by a bounded weighted score.
+    function penalty(p){
+      const priority=p.firstGamePriority?1000000:0;
+      const recent=state.round-(p.lastSatRound??-999)<=1?1000:0;
+      return priority+100*Math.max(0,schedulingSit(p))+recent-0.4*(p.playStreak||0)+Math.random()*.15;
+    }
+    const dp=Array(need+1).fill(null);
+    dp[0]={cost:0,waiting:[]};
+    for(const u of shuffle(units)){
+      const cost=u.reduce((sum,p)=>sum+penalty(p),0);
+      for(let n=need;n>=u.length;n--){
+        const prior=dp[n-u.length];if(!prior)continue;
+        const score=prior.cost+cost;
+        if(!dp[n]||score<dp[n].cost)dp[n]={cost:score,waiting:[...prior.waiting,...u]};
       }
     }
-    function search(i,playing,waiting){
-      if(++visited>250000)return;
-      if(playing.length>capacity||playing.length+suffix[i]<capacity)return;
-      if(i===units.length){if(playing.length===capacity)evaluate(playing,waiting);return;}
-      const u=units[i];
-      if(playing.length+u.length<=capacity)search(i+1,[...playing,...u],waiting);
-      search(i+1,playing,[...waiting,...u]);
-    }
-    if(units.length<=21)search(0,[],[]);
-    if(best)return best;
-    // For exceptionally large sessions, sample combinations without
-    // compromising fixed pairs or the fairness ordering.
-    for(let t=0;t<6000;t++){
-      const order=shuffle(units),playing=[],waiting=[];
-      for(const u of order){if(playing.length+u.length<=capacity)playing.push(...u);else waiting.push(...u);}
-      if(playing.length===capacity)evaluate(playing,waiting);
-    }
-    if(best)return best;
-    // Impossible to fill the configured courts while preserving pairs.
-    return {playing:[],waiting:[...players]};
+    if(!dp[need])return {playing:[],waiting:[...players]};
+    const waiting=dp[need].waiting,ids=new Set(waiting.map(p=>p.id));
+    return {playing:players.filter(p=>!ids.has(p.id)),waiting};
   }
 
   // Exact minimum-repeat teammate matching for ordinary Smart Random games.
   // Dynamic programming over 4-player court partitions. This makes repeats
   // strictly worse than any opponent-history tie-breaker.
   function buildSmart(players){
-    if(players.length>16) return buildSmartFallback(players);
+    if(players.length>8) return buildSmartFallback(players);
     const n=players.length, full=(1<<n)-1, memo=new Map();
     const fixedIndex=players.map(p=>players.findIndex(q=>q.id===effectivePartnerId(p)));
     function solve(mask){
@@ -899,18 +904,40 @@ input,select,button{max-width:100%}
     return Number.isFinite(result.cost)?result.courts:buildSmartFallback(players);
   }
 
+  // Court packing by indivisible player units; handles 20+ players with fixed pairs.
+  // Pack fixed pairs first, then singles, guaranteeing complete four-player courts.
+  function shuffledCourtGroups(players){
+    const units=makeUnits(players),pairs=shuffle(units.filter(u=>u.length===2)),solos=shuffle(units.filter(u=>u.length===1));
+    const courtCount=players.length/4;
+    if(!Number.isInteger(courtCount))return null;
+    const groups=Array.from({length:courtCount},()=>[]);
+    // Randomized distribution of pairs, never more than two pairs per court.
+    for(const pair of pairs){
+      const available=groups.filter(g=>g.length<=2);
+      if(!available.length)return null;
+      const min=Math.min(...available.map(g=>g.length));
+      const choices=available.filter(g=>g.length===min);
+      choices[Math.floor(Math.random()*choices.length)].push(...pair);
+    }
+    for(const group of groups)while(group.length<4){
+      if(!solos.length)return null;
+      group.push(...solos.splice(0,1)[0]);
+    }
+    return groups;
+  }
   function buildSmartFallback(players){
     let best=null,bestCost=Infinity;
-    for(let t=0;t<600;t++){
-      const arr=shuffle(players),groups=[];let cost=0,ok=true;
-      for(let i=0;i<arr.length;i+=4){
-        const g=arr.slice(i,i+4);
-        if(g.some(p=>effectivePartnerId(p)&&!g.some(x=>x.id===effectivePartnerId(p)))){ok=false;break;}
+    const trials=players.length>=24?45:90;
+    for(let t=0;t<trials;t++){
+      const groups=shuffledCourtGroups(players);
+      if(!groups)continue;
+      let cost=0,round=[],ok=true;
+      for(const g of groups){
         const pairing=bestTeams(g,'smart');
         if(!pairing){ok=false;break;}
-        cost+=repeatCost(pairing,0.1);groups.push(pairing);
+        cost+=repeatCost(pairing,.1);round.push(pairing);
       }
-      if(ok&&cost<bestCost){best=groups;bestCost=cost;}
+      if(ok&&cost<bestCost){best=round;bestCost=cost;}
     }
     return best||[];
   }
@@ -949,60 +976,44 @@ input,select,button{max-width:100%}
   }
 
   function buildSimilar(players){
-    // Fixed pairs are indivisible teammates. Search court compositions that keep
-    // pairs together while minimizing skill spread, then order courts high-to-low.
-    const units=makeUnits(players);
     let best=null,bestCost=Infinity;
-    const trials=Math.min(1800,500+players.length*55);
+    const trials=players.length>=24?60:100;
     for(let t=0;t<trials;t++){
-      const order=shuffle(units), groups=[]; let current=[],ok=true;
-      for(const u of order){
-        if(current.length+u.length>4){ok=false;break;}
-        current.push(...u);
-        if(current.length===4){groups.push(current);current=[];}
-      }
-      if(!ok||current.length||groups.length*4!==players.length) continue;
-      let cost=0; const pairings=[];
+      const groups=shuffledCourtGroups(players);
+      if(!groups)continue;
+      let cost=0,round=[],ok=true;
       for(const g of groups){
         const rs=g.map(rating);
-        cost+=(Math.max(...rs)-Math.min(...rs))*45 + groupRepeatCost(g)*.6;
+        cost+=(Math.max(...rs)-Math.min(...rs))*45+groupRepeatCost(g)*.6;
         const pairing=bestTeams(g,'similar');
-        if(!pairing || !respectsFixed(pairing)){ok=false;break;}
-        pairings.push(pairing);
+        if(!pairing){ok=false;break;}
+        round.push(pairing);
       }
-      if(ok&&cost<bestCost){best=pairings;bestCost=cost;}
+      if(ok&&cost<bestCost){best=round;bestCost=cost;}
     }
-    if(!best) return buildSmart(players);
-    best.sort((x,y)=>{
-      const ax=x.flat().reduce((s,p)=>s+rating(p),0)/4;
-      const ay=y.flat().reduce((s,p)=>s+rating(p),0)/4;
-      return ay-ax;
-    });
+    if(!best)return buildSmartFallback(players);
+    best.sort((x,y)=>y.flat().reduce((a,p)=>a+rating(p),0)-x.flat().reduce((a,p)=>a+rating(p),0));
     return best;
   }
 
   function buildBalanced(players){
-    // Search many random court compositions; primary objective is team-total balance,
-    // then new partners/opponents. Fixed pairs stay together.
     let best=null,bestCost=Infinity;
-    const trials=Math.min(1200,250+players.length*35);
+    const trials=players.length>=24?60:100;
     for(let t=0;t<trials;t++){
-      const arr=shuffle(players), groups=[]; let ok=true,cost=0;
-      for(let i=0;i<arr.length;i+=4){
-        const g=arr.slice(i,i+4);
-        for(const p of g) if(effectivePartnerId(p) && !g.some(x=>x.id===effectivePartnerId(p))){ok=false;break;}
-        if(!ok) break;
+      const groups=shuffledCourtGroups(players);
+      if(!groups)continue;
+      let ok=true,cost=0,round=[];
+      for(const g of groups){
         const pairing=bestTeams(g,'balanced');
         if(!pairing){ok=false;break;}
         const diff=teamBalanceCost(pairing);
         cost += diff<=.25 ? diff*2 : diff<=.5 ? 2+diff*8 : 30+diff*30;
         cost += repeatCost(pairing,.5);
-        groups.push(pairing);
+        round.push(pairing);
       }
-      if(ok && cost<bestCost){best=groups;bestCost=cost;}
+      if(ok && cost<bestCost){best=round;bestCost=cost;}
     }
-    if(best) return best;
-    return buildSmart(players).map(pair=>bestTeams(pair.flat(),'balanced'));
+    return best||buildSmart(players).map(pair=>bestTeams(pair.flat(),'balanced'));
   }
 
   function expectedScore(teamA,teamB){
@@ -1038,11 +1049,12 @@ input,select,button{max-width:100%}
   }
 
   function makeRound(skipPairPrompt=false){
+    pairSeparationPaused=false;
     if(state.currentRound){
       finalizeAdaptiveResults();
       finalizeLeavers();
     }
-    state.courts = Math.max(1, Number($('courtCount').value)||1);
+    state.courts = Math.min(8, Math.max(1, Number($('courtCount').value)||1));
     state.mode = $('modeSelect').value;
     state.endType = $('sessionEndType').value;
     state.endTime = $('endTime').value;
@@ -1060,6 +1072,13 @@ input,select,button{max-width:100%}
     if(state.temporaryPair?.remaining>0){
       const index=2-state.temporaryPair.remaining;
       forcedSitter=actives.find(p=>p.id===state.temporaryPair.ids[index])||null;
+    }
+    // When no player can sit (all available courts are full), postpone the
+    // approved two-game separation instead of trying to remove a 33rd player
+    // from a 32-player rotation or breaking the fixed pair.
+    if(forcedSitter && actives.length<=capacity){
+      forcedSitter=null;
+      pairSeparationPaused=true;
     }
     const eligible=forcedSitter?actives.filter(p=>p.id!==forcedSitter.id):actives;
     const selected=chooseParticipants(eligible,capacity,state.mode);
@@ -1108,7 +1127,7 @@ input,select,button{max-width:100%}
       }
     }
 
-    if(state.temporaryPair?.remaining>0){
+    if(state.temporaryPair?.remaining>0 && !pairSeparationPaused){
       state.temporaryPair.remaining--;
       if(state.temporaryPair.remaining===0) state.temporaryPair=null;
     }
@@ -1321,7 +1340,7 @@ input,select,button{max-width:100%}
   $('timerStartBtn').onclick=toggleTimer;
   $('timerResetBtn').onclick=resetTimer;
   $('timerMinutes').onchange=resetTimer;
-  $('courtCount').onchange=()=>{state.courts=Math.max(1,Number($('courtCount').value)||1);save();render();};
+  $('courtCount').onchange=()=>{state.courts=Math.min(8,Math.max(1,Number($('courtCount').value)||1));save();render();};
   $('modeSelect').onchange=()=>{state.mode=$('modeSelect').value;save();};
   $('sessionEndType').onchange=()=>{state.endType=$('sessionEndType').value;save();renderReservation();};
   $('endTime').onchange=()=>{state.endTime=$('endTime').value;save();renderReservation();};
