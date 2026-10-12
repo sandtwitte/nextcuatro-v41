@@ -359,7 +359,7 @@ input,select,button{max-width:100%}
   @keyframes timerFlash{from{opacity:1;transform:scale(1)}to{opacity:.42;transform:scale(1.04)}}
 
 
-  /* v5.12 Beta: current features and release notes */
+  /* v5.13 Beta: current features and release notes */
   .features-panel{max-width:1100px;margin:16px auto 0;padding:0 16px}
   .features-panel details{background:var(--card, #fff);border:1px solid #d8e0e7;border-radius:12px;overflow:hidden}
   .features-panel summary{cursor:pointer;padding:15px 18px;font-weight:750;color:#12345a;list-style-position:inside}
@@ -509,11 +509,12 @@ input,select,button{max-width:100%}
   <details id="featuresHelp">
     <summary>Click here to expand a description of the app's current features</summary>
     <div class="features-content">
-      <p class="feature-version">NextCuatro v5.12 Beta · Flexible. Smart. Adaptive.</p>
+      <p class="feature-version">NextCuatro v5.13 Beta · Flexible. Smart. Adaptive.</p>
       <p>NextCuatro organizes rotating pickleball games as players arrive, take breaks, and leave. Set the available courts, choose a rotation mode, add players, and press <strong>Next Cuatro!</strong> to create the next game.</p>
-      <h3>What’s new in v5.12 Beta</h3>
+      <h3>What’s new in v5.13 Beta</h3><p>Fixed an issue found in changing-attendance testing: if one member of a fixed pair leaves, their remaining partner can still be scheduled as a solo player. The pair preference is retained if the departed player later returns. Added evolving-session regression testing with multiple late arrivals, departures, pairs, skill changes and larger groups.</p>
+      <p>Corrected pair-fairness invitations when players join or leave mid-session: fixed pairs can be offered a temporary break when they have fewer adjusted sit-outs than the typical solo player. Re-invitations wait until the same solo players have each taken another break. Actual sit-out statistics remain unchanged.</p>
       <p>Replaced the 50-player registration hard stop with a one-time advisory when the 51st active player joins or is restored. More than 50 active players are permitted, but performance and fairness above 50 have not been fully tested. The prior fixed-pair scheduling correction remains in place.</p><p>Previously fixed a changing-attendance edge case: if all courts are full, an approved temporary pair separation waits until a sit-out spot opens. Pair integrity, existing rotation capacity, and actual sit-out totals are preserved. Includes support for up to 8 courts and stress-tested scheduling with up to 50 active players.</p>
-      <ul><li>Late arrivals get first-game priority and an arrival-adjusted scheduling baseline; actual sit-out totals remain unchanged.</li><li>Clear, custom pair-fairness dialog with Yes/No buttons; after a pair accepts one break each, no catch-up prompts until all active solo players have sat out another time.</li><li>Voluntary sit-outs count toward the same fairness total as assigned breaks.</li><li>Rotation and pairing handling strengthened for changing attendance.</li></ul>
+      <ul><li>Late arrivals get first-game priority and an arrival-adjusted scheduling baseline; actual sit-out totals remain unchanged.</li><li>Clear, custom pair-fairness dialog with Yes/No buttons; after a pair accepts one break each, no catch-up prompts until the same incumbent solo players have sat out another time.</li><li>Voluntary sit-outs count toward the same fairness total as assigned breaks.</li><li>Rotation and pairing handling strengthened for changing attendance.</li></ul>
       <h3>Players &amp; availability</h3>
       <ul>
         <li>Add players before or during a session; new players receive priority in the next rotation when space permits, without catching up on earlier sit-outs.</li>
@@ -553,7 +554,7 @@ input,select,button{max-width:100%}
     </div>
   </details>
 </section>
-<div class="footer">NextCuatro · v5.12 Beta · © 2026 Todd Witte</div>
+<div class="footer">NextCuatro · v5.13 Beta · © 2026 Todd Witte</div>
 
 <script>
 (() => {
@@ -777,31 +778,50 @@ input,select,button{max-width:100%}
   // A fixed team may be temporarily separated, only with organizer approval.
   let pairSeparationPaused=false;
   function effectivePartnerId(p){
+    if(!p.fixedPartnerId) return null;
+    const partner=state.players.find(x=>x.id===p.fixedPartnerId);
+    // A departed or unavailable partner must not make the remaining player
+    // impossible to schedule. Keep the pairing preference for a later return.
+    if(!partner || !['active','leaving'].includes(partner.status) || partner.sitNext) return null;
     if(pairSeparationPaused) return p.fixedPartnerId;
     const t=state.temporaryPair;
     if(t && t.remaining>0 && t.ids.includes(p.id)) return null;
     return p.fixedPartnerId;
   }
 
-  // Pair fairness uses actual sit-outs for statistics, but a separate
-  // cycle watermark for invitations. Declining/accepting never causes
-  // a backlog of catch-up invitations.
+  // Pair fairness: historical sit-outs are displayed unchanged. A late arrival
+  // cannot veto a pair invitation merely because they have a smaller raw count.
+  // Each invitation stores a snapshot of eligible solo players' adjusted sit-outs;
+  // another invitation is allowed only after those same players have sat again.
   let pairPromptPending=false;
   function maybeSuggestPairBreak(actives,capacity){
     if(pairPromptPending || state.temporaryPair?.remaining>0) return false;
-    if(actives.length-capacity!==1) return false;
+    if(actives.length<=capacity) return false;
     const pairs=makeUnits(actives).filter(u=>u.length===2);
     const solos=actives.filter(p=>!p.fixedPartnerId);
-    if(!solos.length) return false;
-    const lowestSoloSit=Math.min(...solos.map(schedulingSit));
+    if(!solos.length || !pairs.length) return false;
+    const soloScores=solos.map(schedulingSit).sort((a,b)=>a-b);
+    const mid=Math.floor(soloScores.length/2);
+    const typicalSoloSit=soloScores.length%2 ? soloScores[mid] : (soloScores[mid-1]+soloScores[mid])/2;
     state.pairPromptDeclinedAt ||= {};
     const due=pairs.find(u=>{
       const key=u.map(p=>p.id).sort().join(':');
-      const lastOpportunity=state.pairPromptDeclinedAt[key] ?? -1;
-      return u.every(p=>schedulingSit(p)<lowestSoloSit-0.00001) && lowestSoloSit>lastOpportunity+0.00001;
+      const previous=state.pairPromptDeclinedAt[key];
+      if(!u.every(p=>schedulingSit(p)<typicalSoloSit-0.00001)) return false;
+      if(previous && typeof previous==='object'){
+        const snapshot=previous.solos||{};
+        const stillHere=solos.filter(p=>Object.prototype.hasOwnProperty.call(snapshot,p.id));
+        // The same incumbent solo players must each have sat once since the
+        // last invitation. Newly arrived players do not cause catch-up delays.
+        if(stillHere.length && !stillHere.every(p=>schedulingSit(p)>snapshot[p.id]+0.00001))return false;
+        if(!stillHere.length && typicalSoloSit<=previous.median+0.00001)return false;
+      }else if(typeof previous==='number' && typicalSoloSit<=previous+0.00001){
+        return false; // backward compatibility with saved v5.12 sessions
+      }
+      return true;
     });
-    if(!due) return false;
-    const [a,b]=due, key=due.map(p=>p.id).sort().join(':');
+    if(!due)return false;
+    const [a,b]=due,key=due.map(p=>p.id).sort().join(':');
     pairPromptPending=true;
     const modal=$('pairFairnessModal');
     $('pairFairnessDescription').textContent=`${a.name} and ${b.name} are due for a break. To keep sit-outs fair, would you like to temporarily separate them for the next two games?`;
@@ -809,12 +829,9 @@ input,select,button{max-width:100%}
     const finish=approved=>{
       modal.hidden=true;
       pairPromptPending=false;
-      // Store the current solo-cycle threshold in BOTH cases.
-      // On acceptance this prevents immediate catch-up prompts.
-      state.pairPromptDeclinedAt[key]=lowestSoloSit;
-      if(approved) state.temporaryPair={ids:[a.id,b.id],remaining:2};
-      save();
-      makeRound(true);
+      state.pairPromptDeclinedAt[key]={median:typicalSoloSit,solos:Object.fromEntries(solos.map(p=>[p.id,schedulingSit(p)]))};
+      if(approved)state.temporaryPair={ids:[a.id,b.id],remaining:2};
+      save();makeRound(true);
     };
     $('pairFairnessYes').onclick=()=>finish(true);
     $('pairFairnessNo').onclick=()=>finish(false);
