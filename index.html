@@ -490,7 +490,6 @@ input,select,button{max-width:100%}
       <section class="card panel history">
         <div class="section-title">
           <h2>Session fairness</h2>
-          <span class="subtle">Games, sit-outs, partners</span>
         </div>
         <div style="overflow:auto">
           <table>
@@ -509,8 +508,8 @@ input,select,button{max-width:100%}
   <details id="featuresHelp">
     <summary>Click here to expand a description of the app's current features</summary>
     <div class="features-content">
-      <p class="feature-version">NextCuatro v5.15.1 Beta · Flexible. Smart. Adaptive.</p>
-      <p>NextCuatro organizes rotating pickleball games as players arrive, take breaks, and leave. Set the available courts, choose a rotation mode, add players, and press <strong>Next Cuatro!</strong> to create the next game.</p>
+      <p class="feature-version">NextCuatro v5.16 Beta · Flexible. Smart. Adaptive.</p>
+      <p><strong>NextCuatro</strong> organizes rotating pickleball games with flexibility and fairness. Players can arrive, take breaks, leave, pair or unpair, rotate by skill level, and track wins and losses—all while the app adapts to changing attendance. Set the number of available courts, choose a rotation mode, add players (with optional skill ratings), and press <strong>Next Cuatro!</strong> to generate the next round.</p>
       <h3>Players &amp; availability</h3>
       <ul>
         <li>Add players before or during a session; new players receive priority in the next rotation when space permits, without catching up on earlier sit-outs.</li>
@@ -550,7 +549,7 @@ input,select,button{max-width:100%}
     </div>
   </details>
 </section>
-<div class="footer">NextCuatro · v5.15.1 Beta · © 2026 Todd Witte</div>
+<div class="footer">NextCuatro · v5.16 Beta · © 2026 Todd Witte</div>
 
 <div id="pairFairnessModal" class="nc-modal-backdrop" hidden role="dialog" aria-modal="true" aria-labelledby="pairFairnessTitle">
   <div class="nc-modal">
@@ -1373,7 +1372,7 @@ input,select,button{max-width:100%}
   $('endTime').onchange=()=>{state.endTime=$('endTime').value;save();renderReservation();};
 
   $('resetBtn').onclick=()=>{
-    if(confirm('Start a new session?\n\nThis will erase all players, pairings, results, and session data and start fresh.\n\nAre you sure you want to clear everything?')){
+    if(confirm('This will clear all players and data to start a new session.')){
       state=structuredClone(defaultState); save(); render();
     }
   };
