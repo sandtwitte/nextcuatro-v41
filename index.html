@@ -359,7 +359,7 @@ input,select,button{max-width:100%}
   @keyframes timerFlash{from{opacity:1;transform:scale(1)}to{opacity:.42;transform:scale(1.04)}}
 
 
-  /* v5.13 Beta: current features and release notes */
+  /* Current features description */
   .features-panel{max-width:1100px;margin:16px auto 0;padding:0 16px}
   .features-panel details{background:var(--card, #fff);border:1px solid #d8e0e7;border-radius:12px;overflow:hidden}
   .features-panel summary{cursor:pointer;padding:15px 18px;font-weight:750;color:#12345a;list-style-position:inside}
@@ -509,12 +509,8 @@ input,select,button{max-width:100%}
   <details id="featuresHelp">
     <summary>Click here to expand a description of the app's current features</summary>
     <div class="features-content">
-      <p class="feature-version">NextCuatro v5.13 Beta · Flexible. Smart. Adaptive.</p>
+      <p class="feature-version">NextCuatro v5.14.1 Beta · Flexible. Smart. Adaptive.</p>
       <p>NextCuatro organizes rotating pickleball games as players arrive, take breaks, and leave. Set the available courts, choose a rotation mode, add players, and press <strong>Next Cuatro!</strong> to create the next game.</p>
-      <h3>What’s new in v5.13 Beta</h3><p>Fixed an issue found in changing-attendance testing: if one member of a fixed pair leaves, their remaining partner can still be scheduled as a solo player. The pair preference is retained if the departed player later returns. Added evolving-session regression testing with multiple late arrivals, departures, pairs, skill changes and larger groups.</p>
-      <p>Corrected pair-fairness invitations when players join or leave mid-session: fixed pairs can be offered a temporary break when they have fewer adjusted sit-outs than the typical solo player. Re-invitations wait until the same solo players have each taken another break. Actual sit-out statistics remain unchanged.</p>
-      <p>Replaced the 50-player registration hard stop with a one-time advisory when the 51st active player joins or is restored. More than 50 active players are permitted, but performance and fairness above 50 have not been fully tested. The prior fixed-pair scheduling correction remains in place.</p><p>Previously fixed a changing-attendance edge case: if all courts are full, an approved temporary pair separation waits until a sit-out spot opens. Pair integrity, existing rotation capacity, and actual sit-out totals are preserved. Includes support for up to 8 courts and stress-tested scheduling with up to 50 active players.</p>
-      <ul><li>Late arrivals get first-game priority and an arrival-adjusted scheduling baseline; actual sit-out totals remain unchanged.</li><li>Clear, custom pair-fairness dialog with Yes/No buttons; after a pair accepts one break each, no catch-up prompts until the same incumbent solo players have sat out another time.</li><li>Voluntary sit-outs count toward the same fairness total as assigned breaks.</li><li>Rotation and pairing handling strengthened for changing attendance.</li></ul>
       <h3>Players &amp; availability</h3>
       <ul>
         <li>Add players before or during a session; new players receive priority in the next rotation when space permits, without catching up on earlier sit-outs.</li>
@@ -527,7 +523,7 @@ input,select,button{max-width:100%}
       <ul>
         <li><strong>Smart Random:</strong> rotates players while considering sit-out fairness and teammate variety.</li>
         <li><strong>Similar Skill:</strong> groups players with broadly similar skill levels.</li>
-        <li><strong>Balanced Teams:</strong> aims to create competitive, evenly matched teams.</li>
+        <li><strong>Balanced Teams:</strong> aims to create competitive, evenly matched teams by keeping the sum of player ratings similar on each side.</li>
         <li>Adjust the number of available courts as attendance changes.</li>
       </ul>
       <h3>Fairness &amp; fixed pairs</h3>
@@ -545,7 +541,7 @@ input,select,button{max-width:100%}
       </ul>
       <h3>Timer &amp; session controls</h3>
       <ul>
-        <li>Select a 10-, 12-, or 15-minute game timer; start, pause, or reset it.</li>
+        <li>Play using modified rally scoring to help games finish at approximately the same time, or use the optional 10-, 12-, or 15-minute game timer. Start, pause, or reset the timer as needed. The timer automatically resets and stops when the next round is generated.</li>
         <li>At zero, hear the end-of-game chimes and see the end-of-game message.</li>
         <li>Next Cuatro! resets and stops the timer for the new game; it does not start automatically.</li>
         <li>Session data is stored in this browser on this device. Clearing browser data may remove it.</li>
@@ -554,7 +550,7 @@ input,select,button{max-width:100%}
     </div>
   </details>
 </section>
-<div class="footer">NextCuatro · v5.13 Beta · © 2026 Todd Witte</div>
+<div class="footer">NextCuatro · v5.14.1 Beta · © 2026 Todd Witte</div>
 
 <script>
 (() => {
@@ -1229,6 +1225,8 @@ input,select,button{max-width:100%}
   }
   function finalizeLeavers(){}
 
+  function nextButtonHtml(label){ return `<img class="next-logo" src="nextcuatro-logo.png" alt="">${escapeHtml(label)}`; }
+
   function renderRound(){
     const area=$('courtArea'); area.innerHTML='';
     const cr=state.currentRound;
@@ -1253,7 +1251,7 @@ input,select,button{max-width:100%}
       card.innerHTML=`
         <h3>COURT ${idx+1}</h3>
         <button class="team team-pick ${result==='A'?'selected':''}" data-result="A" title="Tap to record this team as winner"><span class="team-row"><span>${escapeHtml(t1[0])} + ${escapeHtml(t1[1])}</span>${result==='A'?'<span class="winner-label">WINNER</span>':''}</span></button>
-        <div class="vs">vs.</div>
+        <div class="vs">serves to</div>
         <button class="team team-pick ${result==='B'?'selected':''}" data-result="B" title="Tap to record this team as winner"><span class="team-row"><span>${escapeHtml(t2[0])} + ${escapeHtml(t2[1])}</span>${result==='B'?'<span class="winner-label">WINNER</span>':''}</span></button>`;
       card.querySelectorAll('[data-result]').forEach(btn=>btn.onclick=()=>recordResult(idx,btn.dataset.result));
       area.appendChild(card);
